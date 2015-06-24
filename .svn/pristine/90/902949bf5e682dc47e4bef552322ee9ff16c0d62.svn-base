@@ -1,0 +1,89 @@
+package presentation.player.playerDetail;
+
+import java.awt.Color;
+import java.awt.GridLayout;
+import java.util.ArrayList;
+
+import javax.swing.BorderFactory;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+
+import businesslogic.playerbl.RegressionItem;
+
+public class RegressionLabel extends JLabel{
+	PartLabel positiveLabel;
+	PartLabel negativeLabel;
+	
+	public RegressionLabel(){
+		initialise();
+	}
+	
+	private void initialise(){
+		this.setLayout(new GridLayout(1, 2));
+		this.setSize(150, 170);
+		this.setOpaque(true);
+		this.setBackground(Color.orange);
+		this.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+		this.setVisible(true);
+		
+		setPositive();
+		setNegative();
+	}
+	
+	private void setPositive(){
+		positiveLabel = new PartLabel("正相关");
+		this.add(positiveLabel);
+	}
+	
+	private void setNegative(){
+		negativeLabel = new PartLabel("负相关");
+		this.add(negativeLabel);
+	}
+	
+//	private 
+	
+	public static void main(String[] args) {
+		JFrame f = new JFrame();
+		f.setLayout(null);
+		f.setBounds(20, 20, 400, 400);
+		f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		
+		RegressionLabel r = new RegressionLabel();
+		f.add(r);
+		
+		f.setVisible(true);
+	}
+
+}
+
+class PartLabel extends JLabel{
+
+	private boolean isPositive;
+	public PartLabel(String text){
+		setHeader(text);
+		initialise();
+	}
+	
+	private void setHeader(String text){
+		JLabel l = new JLabel();
+		l.setText(text);
+		this.add(l);
+	}
+	
+	public void setValues(ArrayList<RegressionItem> items){
+		if(items.size() == 0){
+			
+		}else{
+			for(int i=0;i<items.size();i++){
+				RegressionItem item = items.get(i);
+				String str = item.attri;
+				
+			}
+		}
+	}
+	
+	private void initialise(){
+		this.setBackground(Color.GRAY);
+		this.setLayout(new GridLayout(0, 1));
+	}
+}

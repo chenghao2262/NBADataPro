@@ -1,0 +1,137 @@
+package businesslogic.matchbl;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import data.database.JDBCUtils;
+import org.apache.commons.dbutils.QueryRunner;
+import org.apache.commons.dbutils.handlers.ArrayListHandler;
+import vo.matchvo.MatchContentPlayerVO;
+import vo.matchvo.MatchVO;
+import blservice.matchblservice.MatchBLService;
+
+public class MatchBL implements MatchBLService{
+
+	private String sql = "select playerscore_player2013l5.*,time_to_sec(playerscore_player2013l5.inplacetime),matchinfo.matchtime,team.team_name_en,player.display_name_en,player.position from playerscore_player2013l5,player,(select mid,tid from playerscore_player2013l5 group by mid,tid) as a,team,matchinfo  where playerscore_player2013l5.pid=player.pid and player.display_name_en=? and playerscore_player2013l5.mid=a.mid and playerscore_player2013l5.tid!=a.tid and a.tid=team.tid and playerscore_player2013l5.mid=matchinfo.mid";
+	@Override
+	public ArrayList<MatchContentPlayerVO> FindRecentMatches_p(String playerName) {
+		String sql = this.sql.replaceAll("2013","2014");
+		QueryRunner queryRunner = new QueryRunner(JDBCUtils.getDataSource());
+		ArrayList<MatchContentPlayerVO> arrayList = new ArrayList<>();
+		try {
+			List<Object[]> lists =
+			queryRunner.query(sql,new ArrayListHandler(),playerName);
+			for(int i = 0; i < lists.size();i++){
+				arrayList.add(getMatchContentPlayerVO(lists.get(i)));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return arrayList;
+	}
+
+	private MatchContentPlayerVO getMatchContentPlayerVO(Object[] objects) {
+		MatchContentPlayerVO matchContentPlayerVO = new MatchContentPlayerVO();
+		matchContentPlayerVO.matchID = objects[0]==null?-1:Integer.parseInt(String.valueOf(objects[0]));
+		matchContentPlayerVO.date = objects[23]==null?null:String.valueOf(objects[23]);
+		matchContentPlayerVO.minute = objects[22]==null?-1:Integer.parseInt(String.valueOf(objects[22]))/60;
+		matchContentPlayerVO.vs = objects[24]==null?null:String.valueOf(objects[24]);
+		matchContentPlayerVO.name = objects[25]==null?null:String.valueOf(objects[25]);
+		matchContentPlayerVO.position = objects[26]==null?null:String.valueOf(objects[26]);
+		matchContentPlayerVO.shot = objects[4]==null?-1:Integer.parseInt(String.valueOf(objects[0]));
+		matchContentPlayerVO.shotA = objects[5]==null?-1:Integer.parseInt(String.valueOf(objects[0]));
+		matchContentPlayerVO.three = objects[6]==null?-1:Integer.parseInt(String.valueOf(objects[0]));
+		matchContentPlayerVO.threeA = objects[7]==null?-1:Integer.parseInt(String.valueOf(objects[0]));
+		matchContentPlayerVO.penalty = objects[8]==null?-1:Integer.parseInt(String.valueOf(objects[0]));
+		matchContentPlayerVO.penaltyA = objects[9]==null?-1:Integer.parseInt(String.valueOf(objects[0]));
+		matchContentPlayerVO.offendRebound = objects[10]==null?-1:Integer.parseInt(String.valueOf(objects[0]));
+		matchContentPlayerVO.defendRebound = objects[11]==null?-1:Integer.parseInt(String.valueOf(objects[0]));
+		matchContentPlayerVO.rebound = objects[12]==null?-1:Integer.parseInt(String.valueOf(objects[0]));
+		matchContentPlayerVO.assist = objects[13]==null?-1:Integer.parseInt(String.valueOf(objects[0]));
+		matchContentPlayerVO.blockShot = objects[14]==null?-1:Integer.parseInt(String.valueOf(objects[14]));
+		matchContentPlayerVO.fault = objects[15]==null?-1:Integer.parseInt(String.valueOf(objects[0]));
+		matchContentPlayerVO.foul = objects[16]==null?-1:Integer.parseInt(String.valueOf(objects[0]));
+		matchContentPlayerVO.point = objects[17]==null?-1:Integer.parseInt(String.valueOf(objects[0]));
+		return null;
+	}
+
+	@Override
+	public ArrayList<MatchContentPlayerVO> findByDP(String start, String end,
+			String playerName) {
+		String sql = "select playerscore.* from playerscore,player,matchinfo where player.display_name_en=? and (matchinfo.matchtime >= ? and matchinfo.matchtime <= ?) and playerscore.pid=player.pid and playerscore.mid=matchinfo.mid";
+		QueryRunner queryRunner = new QueryRunner(JDBCUtils.getDataSource());
+		ArrayList<MatchContentPlayerVO> arrayList = new ArrayList<>();
+		try {
+			List<Object[]> lists =
+					queryRunner.query(sql,new ArrayListHandler(),playerName);
+			for(int i = 0; i < lists.size();i++){
+				arrayList.add(getMatchContentPlayerVO(lists.get(i)));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return arrayList;
+	}
+
+	@Override
+	public ArrayList<MatchContentPlayerVO> findBySP(int season,
+			String playerName) {
+		String sql = "select p.* from plyaerscore"+season+" as p,player where player.display_name_en=? and plyaerscore_player2013l5.pid=player.pid and plyaerscore_player2013l5.mid=matchinfo.mid";
+		QueryRunner queryRunner = new QueryRunner(JDBCUtils.getDataSource());
+		ArrayList<MatchContentPlayerVO> arrayList = new ArrayList<>();
+		try {
+			List<Object[]> lists =
+					queryRunner.query(sql,new ArrayListHandler(),playerName);
+			for(int i = 0; i < lists.size();i++){
+				arrayList.add(getMatchContentPlayerVO(lists.get(i)));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return arrayList;
+	}
+
+	@Override
+	public MatchVO findMatch(int matchID) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ArrayList<MatchVO> FindRecentMatches_t(String teamName) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ArrayList<MatchVO> findByDate(String start, String end) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ArrayList<MatchVO> findBySeason(int season) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ArrayList<MatchVO> findByDT(String start, String end, String teamName) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ArrayList<MatchVO> findByST(int season, String teamName) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ArrayList<MatchVO> findRecent20() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+}

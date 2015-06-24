@@ -1,0 +1,332 @@
+package presentation.player.playerDetail;
+
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GridLayout;
+import java.awt.Point;
+import java.awt.RenderingHints;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.geom.Line2D;
+
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+
+import blservice.playerblservice.PlayerBLService;
+import businesslogic.playerbl.PlayerBL;
+import presentation.common.PhotoLabel;
+import presentation.common.Season;
+import presentation.common.SeasonComboBox;
+import presentation.main.Mainframe;
+import presentation.team.teamDetail.TeamMiddlePanel;
+import vo.playervo.PlayerVO;
+
+
+public class PlayerDetailTopPanel extends JPanel{
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	JLabel playerNumLabel;
+	JLabel playerNameLabel;
+	JLabel playerPos_TeamLabel;
+	JPanel PlayerBasicInfoPanel;
+	JPanel PlayerAvgFieldPanel;
+	JLabel playerPhotoLabel;
+	JLabel teamPicLabel;
+	
+	RegressionLabel regressionLabel;
+	
+	PlayerMiddlePanel observer;
+	
+	PlayerBLService bl;
+	PlayerVO vo;
+	
+	SeasonComboBox seasonComboBox;//赛季选择
+	JLabel commitSeason;//提交赛季
+	
+	public PlayerDetailTopPanel(PlayerVO v){
+		bl = new PlayerBL();
+		vo = v;
+		this.setLayout(null);
+		this.setBounds(0, 0, 1280,200);
+		this.setOpaque(false);
+//		this.setBackground(Color.blue);
+		setPlayerPhotoLabel();
+		setTeamPicLabel();
+		setPlayerNUM();
+		setPlayerName();
+		setPlayerPos_Team();
+		setPlayerBasicInfoPanel();
+		setPlayerAvgFieldPanel();
+		setSeasonComboBox();
+		setRegression();
+	}
+	
+	private void setRegression(){
+		regressionLabel = new RegressionLabel();
+		regressionLabel.setLocation(920, 20);
+		regressionLabel.setValues(bl.playerRegression(vo.id, Season.SEASON));
+		this.add(regressionLabel);
+		this.repaint();
+	}
+	
+	public void registerPlayerTopPanel(PlayerMiddlePanel o){
+		observer = o;
+	}
+	
+	public int setSeasonAttri(){
+		int resultSeason = 0;
+		String seasonSelected = (String) seasonComboBox.getSelectedItem();
+		switch(seasonSelected){
+			case"赛季":resultSeason = 2014;break;
+			case"2014-2015":resultSeason = 2014;break;
+			case"2013-2014":resultSeason = 2013;break;
+			case"2012-2013":resultSeason = 2012;break;
+			case"2011-2012":resultSeason = 2011;break;
+			case"2010-2011":resultSeason = 2010;break;
+			case"2009-2010":resultSeason = 2009;break;
+			default:break;
+		}
+		return resultSeason;
+	}
+
+	private void setSeasonComboBox(){
+		seasonComboBox = new SeasonComboBox();
+		seasonComboBox.setlocation(new Point(700,130));
+		seasonComboBox.setSize(120, 30);
+		this.add(seasonComboBox);
+		
+		commitSeason = new JLabel("commit");
+		commitSeason.setForeground(Color.GRAY);
+		commitSeason.setFont(new Font("微软雅黑",0,18));
+		commitSeason.setBounds(710,160,80,30);
+		commitSeason.addMouseListener(new SeasonCommitListener());
+		this.add(commitSeason);
+		this.repaint();
+		this.updateUI();
+	} 
+	
+	class SeasonCommitListener implements MouseListener{
+		int times = 0;
+		@Override
+		public void mouseClicked(MouseEvent e) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void mousePressed(MouseEvent e) {
+			times ++;
+			if(times%2 == 1){
+				commitSeason.setFont(new Font("Dialog",1,15));
+			}else{
+				commitSeason.setFont(new Font("Dialog",1,18));
+			}
+			observer.updateSeason(setSeasonAttri());
+			Season.SEASON = setSeasonAttri();
+		}
+
+		@Override
+		public void mouseReleased(MouseEvent e) {
+			// TODO Auto-generated method stub
+
+			commitSeason.setFont(new Font("微软雅黑",0,18));
+		}
+
+		@Override
+		public void mouseEntered(MouseEvent e) {
+			commitSeason.setFont(new Font("微软雅黑", Font.ITALIC+Font.BOLD, 18));
+			commitSeason.setCursor(new Cursor(Cursor.HAND_CURSOR));	
+		}
+
+		@Override
+		public void mouseExited(MouseEvent e) {
+			// TODO Auto-generated method stub
+			commitSeason.setFont(new Font("微软雅黑",0,18));
+			
+		}
+		
+	}
+	
+	/*
+	 * 画一条线分割基础信息与球衣号
+	 */
+	public void paint(Graphics g){
+		super.paint(g);
+		Graphics2D g2 = (Graphics2D) g;
+		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+		RenderingHints.VALUE_ANTIALIAS_ON);
+		g2.setPaint(Color.gray);
+		g2.draw(new Line2D.Double(450, 20, 450, 110));
+//		g2.drawString("Line", 350, 250);
+	}
+	
+	/*
+	 * 在toplabel里添加球员图片；1.png是球员图片
+	 */
+	public void setPlayerPhotoLabel (){
+		playerPhotoLabel = new PhotoLabel(new ImageIcon("portrait/"+vo.photo+".png").getImage());
+		playerPhotoLabel.setBounds(0,15,230,185);
+		playerPhotoLabel.setBackground(Color.WHITE);
+		playerPhotoLabel.setOpaque(true);
+		playerPhotoLabel.setVisible(true);
+		this.add(playerPhotoLabel);
+	}
+	
+	/*
+	 * 在panel右侧添加球员所属球队图片，图片名称为ATL
+	 */
+	public void setTeamPicLabel(){
+//		System.out.println(vo.team);
+		teamPicLabel = new PhotoLabel(new ImageIcon("teamsPNG/"+vo.teamName+".png").getImage());
+//		System.out.println("teamsPNG/"+vo.teamName+".png");
+		teamPicLabel.setBounds(1100,0,130,130);
+		teamPicLabel.setBackground(Color.WHITE);
+		teamPicLabel.setOpaque(true);
+		teamPicLabel.setVisible(true);
+		teamPicLabel.addMouseListener(new MouseAdapter(){
+			@Override
+			public void mousePressed(MouseEvent e) {
+				Mainframe.getFrame().changeContent(new TeamMiddlePanel(vo.teamName));
+			}
+		
+		});
+		this.add(teamPicLabel);
+	}
+	
+	/*
+	 * 添加球员球衣号label
+	 */
+	public void setPlayerNUM(){
+		playerNumLabel = new JLabel((int)(Math.random()*50)+"");
+		playerNumLabel.setFont(new Font("Dialog",1,60));
+		playerNumLabel.setForeground(Color.GRAY);
+		playerNumLabel.setBounds(340,40,170,60);
+		this.add(playerNumLabel);
+	}
+	
+	public void setPlayerName(){
+		playerNameLabel = new JLabel(vo.name+"");
+		playerNameLabel.setFont(new Font("Dialog",1,20));
+		playerNameLabel.setForeground(Color.DARK_GRAY);
+		playerNameLabel.setBounds(470,30,180,30);
+		this.add(playerNameLabel);
+	}
+	
+	public void setPlayerPos_Team(){
+		playerPos_TeamLabel = new JLabel(vo.position+"／"+vo.team);
+		playerPos_TeamLabel.setFont(new Font("Dialog",1,13));
+		playerPos_TeamLabel.setForeground(Color.DARK_GRAY);
+		playerPos_TeamLabel.setBounds(470,80,150,30);
+		this.add(playerPos_TeamLabel);
+	}
+
+	public void setPlayerBasicInfoPanel(){
+		PlayerBasicInfoPanel = new JPanel();
+		PlayerBasicInfoPanel.setLayout(new GridLayout(4,1,0,0));
+		PlayerBasicInfoPanel.setBounds(700,20,200,90);
+		PlayerBasicInfoPanel.setBackground(Color.WHITE);
+				
+		JLabel height_weightLabel = new JLabel("Height/Weight:     "+vo.hight+"/"+vo.weigth);
+		height_weightLabel.setFont(new Font("Dialog",1,10));
+		height_weightLabel.setForeground(Color.DARK_GRAY);
+		PlayerBasicInfoPanel.add(height_weightLabel);
+
+		JLabel birthdatLabel = new JLabel("Bitrh:     " + vo.birth);
+		birthdatLabel.setFont(new Font("Dialog",1,10));
+		birthdatLabel.setForeground(Color.DARK_GRAY);
+		PlayerBasicInfoPanel.add(birthdatLabel);
+		
+		JLabel EXPLabel = new JLabel("Exp:    "+vo.exp+ "years");
+		EXPLabel.setFont(new Font("Dialog",1,10));
+		EXPLabel.setForeground(Color.DARK_GRAY);
+		PlayerBasicInfoPanel.add(EXPLabel);
+		
+		JLabel schoolLabel = new JLabel("School:    " +vo.school);
+		schoolLabel.setFont(new Font("Dialog",1,10));
+		schoolLabel.setForeground(Color.DARK_GRAY);
+		PlayerBasicInfoPanel.add(schoolLabel);
+		
+		PlayerBasicInfoPanel.setVisible(true);
+		this.add(PlayerBasicInfoPanel);
+	}
+
+	public void setPlayerAvgFieldPanel(){
+		PlayerAvgFieldPanel = new JPanel();
+		PlayerAvgFieldPanel.setLayout(new GridLayout(2,3,10,0));
+		PlayerAvgFieldPanel.setBounds(400,120,230,78);
+		PlayerAvgFieldPanel.setBackground(Color.WHITE);
+				
+		JLabel AvgFieldScoreLabel = new JLabel("场均得分");
+		AvgFieldScoreLabel.setFont(new Font("Dialog",1,15));
+		AvgFieldScoreLabel.setForeground(Color.GRAY);
+		PlayerAvgFieldPanel.add(AvgFieldScoreLabel);
+
+		JLabel AvgFieldREBLabel = new JLabel("场均篮板");
+		AvgFieldREBLabel.setFont(new Font("Dialog",1,15));
+		AvgFieldREBLabel.setForeground(Color.GRAY);
+		PlayerAvgFieldPanel.add(AvgFieldREBLabel);
+		
+		JLabel AvgFieldAssistLabel = new JLabel("场均助攻");
+		AvgFieldAssistLabel.setFont(new Font("Dialog",1,15));
+		AvgFieldAssistLabel.setForeground(Color.GRAY);
+		PlayerAvgFieldPanel.add(AvgFieldAssistLabel);
+		
+		JLabel AvgFieldScore = new JLabel(vo.avgPoint+"");
+		AvgFieldScore.setFont(new Font("Dialog",1,25));
+		AvgFieldScore.setForeground(Color.GRAY);
+		PlayerAvgFieldPanel.add(AvgFieldScore);
+		
+		JLabel AvgFieldREB = new JLabel(vo.avgRebound+"");
+		AvgFieldREB.setFont(new Font("Dialog",1,25));
+		AvgFieldREB.setForeground(Color.GRAY);
+		PlayerAvgFieldPanel.add(AvgFieldREB);
+		
+		JLabel AvgFieldAssist = new JLabel(vo.avgAssist+"");
+		AvgFieldAssist.setFont(new Font("Dialog",1,25));
+		AvgFieldAssist.setForeground(Color.GRAY);
+		PlayerAvgFieldPanel.add(AvgFieldAssist);
+				
+		PlayerBasicInfoPanel.setVisible(true);
+		this.add(PlayerAvgFieldPanel);
+	}
+	
+	public void updatePlayerDetailTopPanel(PlayerVO v){
+		 this.remove(playerNumLabel);
+		 this.remove(playerNameLabel);
+		 this.remove(playerPos_TeamLabel);
+		 this.remove(PlayerBasicInfoPanel);
+		 this.remove(PlayerAvgFieldPanel);
+		 this.remove(playerPhotoLabel);
+		 this.remove(teamPicLabel);
+//		 this.remove(regressionLabel);
+
+		 setPlayerAvgFieldPanel();
+		 setPlayerBasicInfoPanel();
+		 setPlayerPos_Team();
+		 setPlayerName();
+		 setPlayerNUM();
+		 setTeamPicLabel();
+		 setPlayerPhotoLabel();
+		 setRegression();
+	}
+
+	
+	public static void main(String[] args){
+		JFrame jf = new JFrame();
+		jf.setLayout(null);
+		jf.setSize(1280,700);
+		jf.setLocationRelativeTo(null);
+		PlayerVO vo = new PlayerVO();
+		jf.add(new PlayerDetailTopPanel(vo));
+		jf.setVisible(true);
+	}
+}

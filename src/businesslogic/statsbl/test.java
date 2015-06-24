@@ -1,0 +1,107 @@
+package businesslogic.statsbl;
+
+import java.awt.Dimension;
+import java.util.ArrayList;
+
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+
+import blservice.playerblservice.PlayerBLService;
+import blservice.teamblservice.TeamBLService;
+import businesslogic.playerbl.PlayerBL;
+import businesslogic.playerbl.RegressionItem;
+import businesslogic.teambl.TeamBL;
+import vo.AttriOption;
+import vo.playervo.PlayerStatsVO;
+
+
+
+public class test {
+	static void charttest(){
+		ChartBL cbl = new ChartBL();
+		ArrayList<JPanel> charts = new ArrayList<JPanel>();
+//		charts = cbl.off_def(1, 2013);
+//		charts = cbl.on_off(1, 2013);
+//		charts = cbl.position(17, 2013, AttriOption.position_ast, true);
+//		charts = cbl.shootingAnls_t(11, 2013);
+//		charts = cbl.shotClockAnls_t(1, 2013);
+//		charts = cbl.shootingAnls_p(1, 2013, true);
+//		charts = cbl.turnover_fouls(1, 2013);
+		for(int i=0;i<charts.size();i++){
+			JFrame jf = new JFrame();
+			jf.setContentPane(charts.get(i));
+			
+			jf.pack();
+			jf.setVisible(true);
+			jf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		}
+	}
+	static void vocharttest(){
+		ChartBL cbl = new ChartBL();
+//		Top5statsVO vo = cbl.top5manGroup(1,13,AttriOption.eg, true);
+		PlayerStatsVO vo = cbl.turnovers(1, 13, true);
+//		PlayerStatsVO vo = cbl.passing(1, 13, true);
+//		PlayerStatsVO vo = cbl.shotBlock(1, 13, true);
+//		TeamWLProfilesVO vo = cbl.wl_Profile(1, 13);
+//		vo.chart.setBounds(200, 200, 700, 700);
+		
+		JFrame jf = new JFrame();
+
+		jf.setContentPane(vo.chart);
+//		jf.add(vo.chart);
+		jf.pack();
+		jf.setVisible(true);
+		jf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+	}
+	static void evolutiontest(){
+		ChartBL cbl = new ChartBL();
+		JFrame jf = new JFrame();
+		ArrayList<String> names = new ArrayList<String>();
+		names.add("John");
+//		names.add("Jake");
+		jf.setContentPane(cbl.evolution(names,  "", true));
+		
+		jf.pack();
+		jf.setVisible(true);
+		jf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+	}
+	
+	static void regression(){
+		PlayerBL pbl = new PlayerBL();
+		ArrayList<ArrayList<RegressionItem>> result = pbl.playerRegression(1, 2013);
+		for(int i=0;i<result.get(0).size();i++)
+			System.out.print(result.get(0).get(i).attri+" "+result.get(0).get(i).param);
+		for(int i=0;i<result.get(1).size();i++)
+			System.out.print(result.get(1).get(i).attri+" "+result.get(1).get(i).param);
+	}
+	public static void main(String args[])  
+	 {  
+		
+	//	charttest();
+	//	vocharttest();
+		evolutiontest();
+	//	regression();
+	//	memberRanktest();
+	//	teamVStest();
+	 }
+	static void teamVStest(){
+		TeamBLService tbl = new TeamBL();
+		ArrayList<String> attri = new ArrayList<String>();
+		attri.add("points");attri.add("rebound");attri.add("assist");attri.add("three");attri.add("penalty");
+		int[] vs_result = tbl.teamVS(10, 20, 2013, attri);
+		for(int i=0;i<vs_result.length;i++)
+			System.out.print(vs_result[i]+" ");
+	}
+	static void memberRanktest(){
+		TeamBLService tbl = new TeamBL();
+		ArrayList<Integer> players = new ArrayList<Integer>();
+		for(int i=1;i<4;i++){
+			players.add(i);
+		}
+		
+		ArrayList<ArrayList<Integer>> result = tbl.memberRank(players, 2013);
+		
+			System.out.print(result);
+	}
+	
+}

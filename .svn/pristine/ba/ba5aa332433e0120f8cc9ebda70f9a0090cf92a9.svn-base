@@ -1,0 +1,796 @@
+package presentation.player.playerDetail;
+
+import java.awt.Color;
+import java.awt.GridLayout;
+import java.awt.Point;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.util.ArrayList;
+
+import javax.swing.BorderFactory;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+
+import blservice.playerblservice.PlayerBLService;
+import businesslogic.playerbl.PlayerBL;
+import businesslogic.playerbl.PlayerBL_stub;
+import presentation.common.SelectLabel;
+import presentation.diagram.DiagramList;
+import presentation.diagram.Evolution;
+import presentation.diagram.FiveMan;
+import presentation.diagram.ON_OFF;
+import presentation.diagram.Position;
+import presentation.diagram.Shooting;
+import presentation.diagram.T_P_S;
+import presentation.hotregion.HotRegionPane;
+import presentation.main.Mainframe;
+import presentation.player.vs.PlayerVSContentPanel;
+import presentation.player.vs.PlayersVSTopPanel;
+import vo.playervo.PlayerVO;
+
+public class PlayerMiddlePanel extends JPanel{
+
+	/**
+	 * 是playerDetailFrame下最大的Panel
+	 */
+	private static final long serialVersionUID = 1L;
+
+	SelectLabel ContrastLabel;//联盟对比
+	SelectLabel LatestMatchLabel;//近5场比赛
+	SelectLabel PastLabel;//过往查询
+	SelectLabel HotZoneLabel;//热区
+	SelectLabel ComparePalyersLabel;//球员对比
+	SelectLabel	DiagramLabel;//图表
+		
+	JLabel BarsGroupLabel;
+	JLabel AvgFieldScoreLabel;
+	JLabel AvgFieldREBLabel;
+	JLabel AvgFieldAssitLabel;
+	JLabel FTPLabel;
+	JLabel TPSPLabel;
+	JLabel BlueLabel;
+	JLabel PlayerTextLabel;
+	JLabel GreyLabel;
+	JLabel LeagueAvgTextLabel;
+	
+	JLabel items;
+	
+	JLabel chooseList;
+	String message;
+	
+	Color darkest = new Color(29,72,121);
+	
+	PlayerMiddle_ContrastLeaguePanel contrastPanel;
+	PlayerMiddle_SeasonDataPanel seasonDataPanel;
+	PlayerMiddle_Recent5Match recent5MatchPanel;
+	PlayerMiddle_PastPanel pastPanel;
+	public PlayerVSContentPanel vsContentPanel;
+	HotRegionPane hotZonePanel;
+	
+	
+	PlayersVSTopPanel vsTopPanel;
+	PlayerDetailTopPanel playerDetailTopPanel;
+	
+	public static PlayerVO vo;
+	public static int season = 2014;
+	String name;
+	public static int idOPP = 0;//对比的球员的id
+	
+	ArrayList<Double> player = new ArrayList<Double>();
+	ArrayList<Double> leagueAvg = new ArrayList<Double>();
+	ArrayList<String> avg = new ArrayList<String>();
+	ArrayList<String> total = new ArrayList<String>();
+	ArrayList<SelectLabel> selectLabelGroups = new ArrayList<SelectLabel>();
+	ArrayList<String> itemsNeedAdd = new ArrayList<String>();
+	
+	static ArrayList<String> diagramClassification = new ArrayList<String>();
+	DiagramList diagramList;
+	String digramItemSelected = "五人组合";//默认
+	
+	/**Diagram**/
+	FiveMan fiveManPanel;
+	Shooting shootPanel;
+	Position positionPanel;
+	ON_OFF OnOffPanel;
+	T_P_S TPSPanel;
+	Evolution evolutionPanel;
+	
+//	PlayerBLService playerbl = new PlayerBL_stub();
+	PlayerBLService playerbl = new PlayerBL();
+
+
+	public PlayerMiddlePanel(String name){
+		this.name = name;
+		this.setLayout(null);
+		this.setBounds(0, 35, 1280,670);
+		this.setBackground(Color.WHITE);
+		setAttri(true);
+		setTopPanel();
+		setItems();
+		setSelectedGroups(ContrastLabel);
+		setContrastPanel();
+		setSeasonPanel();
+	}
+	
+	public void updateSeason(int season){
+		this.season = season;
+		setAttri(true);
+		playerDetailTopPanel.updatePlayerDetailTopPanel(vo);
+		if(ContrastLabel.isSelected){
+			if(contrastPanel!=null)
+				this.remove(contrastPanel);
+			setContrastPanel();
+			if(seasonDataPanel!=null)
+				this.remove(seasonDataPanel);
+			setSeasonPanel();
+		}
+	}
+	
+//	public int[] playerVS(int player1ID, int player2ID,int season,ArrayList<String> attris);
+
+	
+	//由于contentpanel的选择赛季combobox导致球员对比部分的观察者模式更新	
+	public void updateVS(int season){
+		this.season = season;
+		this.vo = playerbl.findPlayerData(name,season);
+		
+		ArrayList<String> attri = new ArrayList<String>();
+		attri.add("points");attri.add("rebound");attri.add("assist");
+		attri.add("three");attri.add("penalty");
+
+		this.setVisible(false);
+		if(ComparePalyersLabel.isSelected){
+			setAttri(false);
+			if(idOPP != 0){
+				vsContentPanel.updateVSContentPanelAvg(player,leagueAvg,new Point(0,0));
+			}else{
+				int[] avgAndVariance = playerbl.playerVS(vo.id, idOPP, season, attri);
+				vsContentPanel.updateVSContentPanel(player,leagueAvg,new Point(0,0),avgAndVariance);
+			}
+			vsContentPanel.updateUI();
+//			setTeamVSPanel(team,avg); 
+		}
+		this.setVisible(true);
+	}
+	
+	//由于toppanel选择球员导致的球员对比部分的观察者模式更新	
+	public void updateVSTop(int idOPP){
+		this.idOPP = idOPP;
+		if(ComparePalyersLabel.isSelected){
+			setAttri(false);
+//			
+//	
+//			
+//			//			
+//			//			
+//			//			
+//			//			
+//			//			
+//			//			
+//			
+			vsContentPanel.updateVSContentPanelAvg(player,leagueAvg,new Point(0,0));
+			vsContentPanel.updateUI();
+//			setTeamVSPanel(team,avg); 
+		}
+	}
+
+	//图表部分的更新,DiagramList
+	public void updateDiagram(String diagramType){
+		this.digramItemSelected = diagramType;
+		System.out.println(digramItemSelected);
+		this.setVisible(false);
+		clearSpaceForDiagram();
+		switch(digramItemSelected){
+		case"五人组合":setFiveManPanel();break;
+		case"投篮分析":setShootingPanel();break;
+		case"位置分析":setPositionPanel();break;
+		case"在场统计":setOn_OffPanel();break;
+		case"失误传球盖帽":setTSPPanel();break;
+		case"演化历程":setEvolutionPanel();break;
+			default:break;
+		}
+		this.setVisible(true);
+	}
+
+	void setFiveManPanel(){
+		fiveManPanel = new FiveMan(vo.id,this.season,false);
+		this.add(fiveManPanel);
+		repaint();
+	}
+	
+	void setShootingPanel(){
+		shootPanel = new Shooting(vo.id,true,this.season);
+		this.add(shootPanel);
+		repaint();
+	}
+	
+	void setPositionPanel(){
+		positionPanel = new Position(vo.id,this.season,false);
+		this.add(positionPanel);
+		repaint();
+	}
+	
+	void setOn_OffPanel(){
+		OnOffPanel = new ON_OFF(vo.id,this.season);
+		this.add(OnOffPanel);
+		repaint();
+	}
+	
+	void setTSPPanel(){
+		TPSPanel = new T_P_S(vo.id,this.season);
+		this.add(TPSPanel);
+		repaint();
+	}
+	
+	void setEvolutionPanel(){
+		ArrayList<String> names = new ArrayList<String>();
+		evolutionPanel = new Evolution(names,true);
+		this.add(evolutionPanel);
+		repaint();
+	}
+
+	void clearSpaceForDiagram(){
+		if(contrastPanel != null){
+			remove(contrastPanel);
+		}
+		if(seasonDataPanel != null){
+			remove(seasonDataPanel);
+		}
+		if(recent5MatchPanel != null){
+			remove(recent5MatchPanel);
+		}
+		if(pastPanel != null){
+			remove(pastPanel);
+		}
+		if(vsContentPanel != null){
+			remove(vsContentPanel);
+		}
+		if(hotZonePanel != null){
+			remove(hotZonePanel);
+		}
+		clearDiagram();
+	}
+
+	void clearDiagram(){
+		if(fiveManPanel != null){
+			remove(fiveManPanel);
+		}
+		if(shootPanel != null){
+			remove(shootPanel);
+		}
+		if(positionPanel != null){
+			remove(positionPanel);
+		}
+		if(OnOffPanel != null){
+			remove(OnOffPanel);
+		}
+		if(TPSPanel != null){
+			remove(TPSPanel);
+		}
+		if(evolutionPanel != null){
+			remove(evolutionPanel);
+		}
+	}
+	
+	String setSeason(int season){
+		String year = "";
+		switch(season){
+			case 2014: year = "2014-2015";break;
+			case 2013: year = "2013-2014";break;
+			case 2012: year = "2012-2013";break;
+			case 2011: year = "2011-2012";break;
+			case 2010: year = "2010-2011";break;
+			case 2009: year = "2009-2010";break;
+			default:break;
+		}
+		return year;
+	}
+	
+	public void setAttri(boolean isTeamAvg){
+		System.out.println(name);
+		PlayerVO voP = playerbl.findPlayerData(name,season); 
+		PlayerVO voL = new PlayerVO();
+		if(isTeamAvg){
+			voL = playerbl.avgLeague(voP.league,season); 
+		}else{
+			voL = playerbl.findPlayerData(vsTopPanel.anotherVO.name,season);
+		}
+		vo = voP;
+//		setTopPanel(voP);
+		player.clear();
+		player.add(voP.avgPoint);player.add(voP.avgRebound);player.add(voP.avgAssist);
+		player.add(voP.three);player.add(voP.penalty);
+		leagueAvg.clear();
+		
+//		System.out.println("AAAAA");
+
+//		System.out.println(voL);
+		
+		leagueAvg.add(voL.avgPoint);leagueAvg.add(voL.avgRebound);leagueAvg.add(voL.avgAssist);
+		leagueAvg.add(voL.three);leagueAvg.add(voL.penalty);
+		//"年度","球队","场数","先发","分钟","％","三分％","罚球％",
+		//"进攻","防守","场均篮板","场均助攻","场均抢断","场均盖帽","失误","犯规","场均得分"
+		String year = setSeason(season);
+		System.out.println("create the table the season is  " + season + " " + year);
+		avg.clear();
+		avg.add(year);avg.add(voP.team);avg.add(voP.numOfGame+"");avg.add(voP.start+"");avg.add(voP.avgMinute+"");avg.add(voP.shot+"");avg.add(voP.three+"");
+		avg.add(voP.penalty+"");avg.add(voP.avgOffend+"");avg.add(voP.avgDefend+"");avg.add(voP.avgRebound+"");avg.add(voP.avgAssist+"");avg.add(voP.avgSteal+"");
+		avg.add(voP.avgBlockShot+"");avg.add(voP.avgFault+"");avg.add(voP.avgFoul+"");avg.add(voP.avgPoint+"");
+		total.clear();
+		total.add(year);total.add(voP.team);total.add(voP.numOfGame+"");total.add(voP.start+"");total.add(voP.minute+"");total.add(voP.shot+"");total.add(voP.three+"");
+		total.add(voP.penalty+"");total.add(voP.offend+"");total.add(voP.defend+"");total.add(voP.rebound+"");total.add(voP.assist+"");total.add(voP.steal+"");
+		total.add(voP.blockShot+"");total.add(voP.fault+"");total.add(voP.foul+"");total.add(voP.point+"");
+		itemsNeedAdd.clear();
+		itemsNeedAdd.add("场均得分");
+		itemsNeedAdd.add("场均助攻");
+		itemsNeedAdd.add("场均篮板"); 
+		itemsNeedAdd.add("三分％"); 
+		itemsNeedAdd.add("罚球％");
+	}
+	
+	public void setSelectedGroups(SelectLabel s){
+		selectLabelGroups.clear();
+		selectLabelGroups.add(ContrastLabel);
+		selectLabelGroups.add(LatestMatchLabel);
+		selectLabelGroups.add(PastLabel);
+		selectLabelGroups.add(HotZoneLabel);
+		selectLabelGroups.add(ComparePalyersLabel);
+		selectLabelGroups.add(DiagramLabel);
+
+		for(SelectLabel sl : selectLabelGroups){
+			if(sl != s){
+				sl.setBackground(Color.black);
+				sl.isSelected = false;
+			}else{
+				sl.isSelected = true;
+				sl.setBackground(Color.GRAY);
+			}
+		}
+	}
+	
+	public void setTopPanel (){
+		playerDetailTopPanel = new PlayerDetailTopPanel(vo);
+		this.add(playerDetailTopPanel);
+		playerDetailTopPanel.registerPlayerTopPanel(this);
+	}
+	
+	public void setItems(){
+		items = new JLabel();
+		items.setLayout(new GridLayout(1,5,1,1));
+		items.setBounds(0, 200,1280,50);
+		items.setBackground(Color.WHITE);
+		items.setOpaque(true);
+		
+		setContrastLabel();
+		setLatestMatchLabel();
+		setPastLabel();
+		setComparePalyersLabel();
+		setHotZoneLabel();
+		setDiagramLabel();
+		
+		items.add(ContrastLabel);
+		items.add(LatestMatchLabel);
+		items.add(PastLabel);
+		items.add(HotZoneLabel);
+		items.add(ComparePalyersLabel);
+		items.add(DiagramLabel);
+		this.add(items);
+	}
+	
+	void setDiagramClassification(){
+		diagramClassification.clear();
+		diagramClassification.add("五人组合");
+		diagramClassification.add("投篮分析");
+		diagramClassification.add("位置分析");
+		diagramClassification.add("在场统计");
+		diagramClassification.add("失误传球盖帽");
+		diagramClassification.add("演化历程");
+		
+		diagramList = new DiagramList(diagramClassification,new Point(1064,280),214);
+		diagramList.register(this);//观察者模式
+		this.add(diagramList);
+		diagramList.setVisible(false);
+	}
+		
+	public void setContrastLabel(){
+		Point location = new Point(0,200);
+		Point size = new Point(212,50);
+		ContrastLabel = new SelectLabel("资料",location,size);
+		ContrastLabel.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				setSelectedGroups(ContrastLabel);
+				setVisible(false);
+				if(contrastPanel != null){
+					remove(contrastPanel);
+				}
+				if(pastPanel != null){
+					remove(pastPanel);
+				}
+				if(recent5MatchPanel != null){
+					remove(recent5MatchPanel);
+				}
+				if(vsContentPanel != null){
+					remove(vsContentPanel);
+				}
+				if(seasonDataPanel != null){
+					remove(seasonDataPanel);
+				}
+				if(vsTopPanel != null){
+					remove(vsTopPanel);
+				}
+				if(seasonDataPanel != null){
+					remove(seasonDataPanel);
+				}
+				if(hotZonePanel != null){
+					remove(hotZonePanel);
+				}
+				if(playerDetailTopPanel.getParent() != null){
+					playerDetailTopPanel.updatePlayerDetailTopPanel(vo);
+				}else{
+					setTopPanel();
+				}
+				
+				setContrastPanel();
+				setSeasonPanel();
+				setVisible(true);
+				repaint();
+			}
+		});
+		this.add(ContrastLabel);
+	}
+	
+	public void setLatestMatchLabel(){
+		Point location = new Point(213,200);
+		Point size = new Point(212,50);
+		LatestMatchLabel = new SelectLabel("近5场比赛查询",location,size);
+
+		LatestMatchLabel.addMouseListener(new MouseAdapter() {
+
+			@Override
+			public void mousePressed(MouseEvent e) {
+				setSelectedGroups(LatestMatchLabel);
+				setVisible(false);
+				if(contrastPanel != null){
+					remove(contrastPanel);
+				}
+				if(pastPanel != null){
+					remove(pastPanel);
+				}
+				if(recent5MatchPanel != null){
+					remove(recent5MatchPanel);
+				}
+				if(vsContentPanel != null){
+					remove(vsContentPanel);
+				}
+				if(seasonDataPanel != null){
+					remove(seasonDataPanel);
+				}
+				if(vsTopPanel != null){
+					remove(vsTopPanel);
+				}
+				if(hotZonePanel != null){
+					remove(hotZonePanel);
+				}
+				if(playerDetailTopPanel.getParent() != null){
+					playerDetailTopPanel.updatePlayerDetailTopPanel(vo);
+				}else{
+					setTopPanel();
+				}
+				setRecent5MatchPanel();
+				setVisible(true);
+				repaint();
+			}
+		});
+
+		this.add(LatestMatchLabel);
+	}
+
+	public void setPastLabel(){
+		Point location = new Point(426,200);
+		Point size = new Point(212,50);
+		PastLabel = new SelectLabel("过往查询",location,size);
+		PastLabel.addMouseListener(new MouseAdapter() {
+
+			@Override
+			public void mousePressed(MouseEvent e) {
+				setSelectedGroups(PastLabel);
+				setVisible(false);
+				if(contrastPanel != null){
+					remove(contrastPanel);
+				}
+				if(pastPanel != null){
+					remove(pastPanel);
+				}
+				if(recent5MatchPanel != null){
+					remove(recent5MatchPanel);
+				}
+				if(vsContentPanel != null){
+					remove(vsContentPanel);
+				}
+				if(seasonDataPanel != null){
+					remove(seasonDataPanel);
+				}
+				if(hotZonePanel != null){
+					remove(hotZonePanel);
+				}
+				if(vsTopPanel != null){
+					remove(vsTopPanel);
+				}
+				if(playerDetailTopPanel.getParent() != null){
+					playerDetailTopPanel.updatePlayerDetailTopPanel(vo);
+				}else{
+					setTopPanel();
+				}
+				setPastPanel();
+				setVisible(true);
+				repaint();
+			}
+		});
+
+		this.add(PastLabel);
+	}
+	
+	public void setHotZoneLabel(){
+		Point location = new Point(638,200);
+		Point size = new Point(212,50);
+		HotZoneLabel = new SelectLabel("热区",location,size);
+		HotZoneLabel.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				setSelectedGroups(HotZoneLabel);
+				setVisible(false);
+				if(contrastPanel != null){
+					remove(contrastPanel);
+				}
+				if(pastPanel != null){
+					remove(pastPanel);
+				}
+				if(recent5MatchPanel != null){
+					remove(recent5MatchPanel);
+				}
+				if(vsContentPanel != null){
+					remove(vsContentPanel);
+				}
+				if(seasonDataPanel != null){
+					remove(seasonDataPanel);
+				}
+				if(vsTopPanel != null){
+					remove(vsTopPanel);
+				}
+				if(playerDetailTopPanel.getParent() != null){
+					playerDetailTopPanel.updatePlayerDetailTopPanel(vo);
+				}else{
+					setTopPanel();
+				}
+				setHotZoneSPanel();
+				setVisible(true);
+				repaint();
+			}
+		});
+		this.add(HotZoneLabel);
+	}
+
+	public void setComparePalyersLabel(){
+		
+		Point location = new Point(851,200);
+		Point size = new Point(212,50);
+		ComparePalyersLabel = new SelectLabel("球员对比",location,size);
+		ComparePalyersLabel.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				setSelectedGroups(ComparePalyersLabel);
+				setVisible(false);
+				if(contrastPanel != null){
+					remove(contrastPanel);
+				}
+				if(pastPanel != null){
+					remove(pastPanel);
+				}
+				if(recent5MatchPanel != null){
+					remove(recent5MatchPanel);
+				}
+				if(vsContentPanel != null){
+					remove(vsContentPanel);
+				}
+				if(seasonDataPanel != null){
+					remove(seasonDataPanel);
+				}
+				if(hotZonePanel != null){
+					remove(hotZonePanel);
+				}
+				if(playerDetailTopPanel.getParent() != null){
+					remove(playerDetailTopPanel);
+					System.out.println("REMOVE PLAYERDETAILTOPPANEL");
+				}
+				if(vsTopPanel != null){
+					remove(vsTopPanel);
+				}
+				setVSTopPanel(PlayerMiddlePanel.this); 
+				
+				setVSPanel(player,leagueAvg);
+				setVisible(true);
+				repaint();
+			}
+			
+		});
+		this.add(ComparePalyersLabel);
+	}
+	
+	public void setDiagramLabel(){
+		setDiagramClassification();
+		DiagramListListener diagramListListener = new DiagramListListener();
+		DiagramLabelListener diagramLabelListener = new DiagramLabelListener();
+		diagramList.addMouseListener(diagramListListener);
+		diagramList.setBorder(BorderFactory.createLineBorder(Color.black));
+		
+		JPanel dp = Mainframe.getFrame().getPopupContainer();
+		diagramList.setVisible(false);
+		dp.removeAll();
+		dp.add(diagramList);
+		dp.repaint();
+		
+		Point location = new Point(1064,200);
+		Point size = new Point(212,50);
+		DiagramLabel = new SelectLabel("图表分析",location,size);
+		DiagramLabel.addMouseListener(diagramLabelListener);
+		this.add(DiagramLabel);
+	}
+	
+	class DiagramListListener implements MouseListener{
+		int selected = 0;
+		@Override
+		public void mouseClicked(MouseEvent e) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void mousePressed(MouseEvent e) {
+			setSelectedGroups(DiagramLabel);
+			System.out.println("TESTED");
+		}
+
+		@Override
+		public void mouseReleased(MouseEvent e) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void mouseEntered(MouseEvent e) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void mouseExited(MouseEvent e) {
+			// TODO Auto-generated method stub
+			diagramList.setVisible(false);
+			System.out.println(e.getPoint());
+		}
+	}
+
+	class DiagramLabelListener implements MouseListener{
+
+		@Override
+		public void mouseClicked(MouseEvent e) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void mousePressed(MouseEvent e) {
+			setSelectedGroups(DiagramLabel);
+			updateDiagram(digramItemSelected);
+		}
+
+		@Override
+		public void mouseReleased(MouseEvent e) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void mouseEntered(MouseEvent e) {
+			diagramList.setVisible(true);
+		}
+
+		@Override
+		public void mouseExited(MouseEvent e) {
+			// TODO Auto-generated method stub
+			int y = e.getY();
+			if(y >= DiagramLabel.getHeight()){
+					
+			}else{
+				diagramList.setVisible(false);
+			}
+		}
+	}
+	
+	public void setContrastPanel(){
+		contrastPanel = new PlayerMiddle_ContrastLeaguePanel(player,leagueAvg);
+		this.add(contrastPanel);
+		playerDetailTopPanel.seasonComboBox.setVisible(true);
+		playerDetailTopPanel.commitSeason.setVisible(true);
+		repaint();
+	}
+	
+	public void setSeasonPanel(){
+		seasonDataPanel = new PlayerMiddle_SeasonDataPanel(avg, total);
+		this.add(seasonDataPanel);
+		playerDetailTopPanel.seasonComboBox.setVisible(true);
+		playerDetailTopPanel.commitSeason.setVisible(true);
+		this.updateUI();
+		repaint();
+	}
+	
+	public void setRecent5MatchPanel(){
+		recent5MatchPanel = new PlayerMiddle_Recent5Match(vo.name);
+		this.add(recent5MatchPanel);
+		playerDetailTopPanel.seasonComboBox.setVisible(false);
+		playerDetailTopPanel.commitSeason.setVisible(false);
+		repaint();
+	}
+
+	public void setPastPanel(){
+		pastPanel = new PlayerMiddle_PastPanel(vo.name);
+		this.add(pastPanel);
+		playerDetailTopPanel.seasonComboBox.setVisible(false);
+		playerDetailTopPanel.commitSeason.setVisible(false);
+		repaint();
+	}
+	
+	public void setVSPanel(ArrayList<Double> player,ArrayList<Double> leagueAvg){
+		vsContentPanel = new PlayerVSContentPanel(itemsNeedAdd,player,leagueAvg);
+		this.add(vsContentPanel);
+		vsContentPanel.registerObserver(this);
+		repaint();
+	}
+	
+	public void setVSTopPanel(PlayerMiddlePanel middle){
+		vsTopPanel = new PlayersVSTopPanel(middle,vo);
+		this.add(vsTopPanel);
+		vsTopPanel.registerObserver(this);
+		repaint();
+	}
+	
+	public void setHotZoneSPanel(){
+		hotZonePanel = new HotRegionPane(vo.id, true, season);
+		this.add(hotZonePanel);
+		playerDetailTopPanel.seasonComboBox.setVisible(true);
+		playerDetailTopPanel.commitSeason.setVisible(true);
+		repaint();
+	}
+	
+	public static void main(String[] args){
+		JFrame jf = new JFrame();
+		jf.setLayout(null);
+		jf.setSize(1280,700);
+		jf.setLocationRelativeTo(null);
+	
+	/*	ArrayList<Double> player = new ArrayList<Double>();
+		ArrayList<Double> leagueAvg = new ArrayList<Double>();
+		ArrayList<String> avg = new ArrayList<String>();
+		ArrayList<String> total = new ArrayList<String>();
+		player.add(20.5);leagueAvg.add(30.7);
+		player.add(20.5);leagueAvg.add(30.7);
+		player.add(20.5);leagueAvg.add(30.7);
+		player.add(20.5);leagueAvg.add(30.7);
+		player.add(20.5);leagueAvg.add(30.7);
+		
+		for(int i = 0; i < 16 ; i++){
+			avg.add("11.11");
+		}
+		for(int i = 0; i < 16 ; i++){
+			total.add("22.11");
+		}
+	 */
+		
+		jf.add(new PlayerMiddlePanel("Aaron Gray"));
+		jf.setVisible(true);
+	}
+	
+}

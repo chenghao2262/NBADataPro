@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="JAwesomeChart">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/JAwesomeChart.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

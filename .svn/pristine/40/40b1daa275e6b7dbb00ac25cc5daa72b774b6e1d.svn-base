@@ -1,0 +1,683 @@
+package presentation.hotregion;
+
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.GridLayout;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+
+import java.util.ArrayList;
+
+//import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.Popup;
+import javax.swing.PopupFactory;
+
+import presentation.common.SeasonComboBox;
+import presentation.hotregion.DiscriptionPane.OptionPane;
+import presentation.main.Mainframe;
+import vo.HotZoneVO;
+
+public class DiscriptionPane extends JPanel implements RegionObserver{
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	public static Color unselected = new Color(0, 0, 0);
+	public static Color selected = new Color(50, 50, 50);
+	
+	MouseListener map;
+	
+	private HotZoneVO zoneSeason;
+	private HotZoneVO zoneLast;
+	
+//	private JLabel popUpLabel;
+//	private Popup popUp;
+	private int id;
+	private int season = 14;
+	private boolean isPerformance = true;
+	private boolean isPreseason = true;
+	
+	private DataOptionLabel dataOptionLabel;
+	private OptionPane optionsPane;
+	private ContentPane content;
+	private HotZoneGlassLabel glass;	//数字
+	
+	public DiscriptionPane(int id){
+		this.id = id;
+		initialise();
+	}
+	
+	private void initialise(){
+		this.setLayout(null);
+		this.setSize(760, 455);
+		
+		setTitle();
+		setGameOption();
+		setContent();
+		setGlass();
+		
+		refresh();
+	}
+	
+	public void refresh(){
+
+		zoneSeason = new HotZone_Stub().getHotZoneVO(id, isPerformance, isPreseason, season);
+		zoneLast = new HotZone_Stub().getHotZoneVO(id, isPerformance, isPreseason, season);;
+		changeContent(0);
+		updateGlass();
+		this.repaint();
+	}
+
+	
+	private void setTitle(){
+		JPanel titlePane = new JPanel();
+		titlePane.setLayout(null);
+		titlePane.setBackground(new Color(44, 44, 120));
+		titlePane.setBounds(0, 0, 760, 40);
+		this.add(titlePane);
+		
+		dataOptionLabel = new DataOptionLabel();
+		dataOptionLabel.setLocation(600, 0);
+		titlePane.add(dataOptionLabel);
+	
+	}
+	
+	private void setGameOption(){
+		optionsPane = new OptionPane();
+		this.add(optionsPane);
+	}
+	
+	private void setGlass(){
+		glass = new HotZoneGlassLabel();
+		glass.setLocation(0, 290);
+		Mainframe.getFrame().getPopupContainer().add(glass);
+	}
+
+	private void updateGlass(){
+		ArrayList<Double> values = new ArrayList<Double>();
+		values.add((double) (100*zoneSeason.zone1D/zoneSeason.zone1N));
+		values.add((double) (100*zoneSeason.zone2D/zoneSeason.zone2N));
+		values.add((double) (100*zoneSeason.zone3D/zoneSeason.zone3N));
+		values.add((double) (100*zoneSeason.zone4D/zoneSeason.zone4N));
+		values.add((double) (100*zoneSeason.zone5D/zoneSeason.zone5N));
+		values.add((double) (100*zoneSeason.zone6D/zoneSeason.zone6N));
+		values.add((double) (100*zoneSeason.zone7D/zoneSeason.zone7N));
+		values.add((double) (100*zoneSeason.zone8D/zoneSeason.zone8N));
+		values.add((double) (100*zoneSeason.zone9D/zoneSeason.zone9N));
+		values.add((double) (100*zoneSeason.zone10D/zoneSeason.zone10N));
+		values.add((double) (100*zoneSeason.zone11D/zoneSeason.zone11N));
+		values.add((double) (100*zoneSeason.zone12D/zoneSeason.zone12N));
+		values.add((double) (100*zoneSeason.zone13D/zoneSeason.zone13N));
+		values.add((double) (100*zoneSeason.zone14D/zoneSeason.zone14N));
+		
+		glass.changeValue(values);
+	}
+	
+	private void setContent(){
+		content = new ContentPane();
+		this.add(content);
+	}
+	
+	public void changeContent(int index){
+		if(index == 8){
+			index = 9;
+		}else if(index == 9){
+			index = 8;
+		}
+		glass.makeBig(index);
+		
+		String shotPlace = null;
+		int seasonD = 1;
+		int seasonN = 1;
+		int latestD = 1;
+		int latestN = 1;
+		switch(index){
+		case 1:
+			shotPlace = "左侧24英尺以外";
+			seasonD = zoneLast.zone1D;
+			seasonN = zoneLast.zone1N;
+			latestD = zoneLast.zone1D;
+			latestN = zoneLast.zone1N;
+			break;
+		case 2:
+			shotPlace = "左侧16-24英尺";
+			seasonD = zoneLast.zone2D;
+			seasonN = zoneLast.zone2N;
+			latestD = zoneLast.zone2D;
+			latestN = zoneLast.zone2N;
+			break;
+		case 3:
+			shotPlace = "左侧8-16英尺";
+			seasonD = zoneLast.zone3D;
+			seasonN = zoneLast.zone3N;
+			latestD = zoneLast.zone3D;
+			latestN = zoneLast.zone3N;
+			break;
+		case 4:
+			shotPlace = "8英尺以内";
+			seasonD = zoneLast.zone4D;
+			seasonN = zoneLast.zone4N;
+			latestD = zoneLast.zone4D;
+			latestN = zoneLast.zone4N;
+			break;
+		case 5:
+			shotPlace = "右侧8-16英尺";
+			seasonD = zoneLast.zone5D;
+			seasonN = zoneLast.zone5N;
+			latestD = zoneLast.zone5D;
+			latestN = zoneLast.zone5N;
+			break;
+		case 6:
+			shotPlace = "右侧16-24英尺";
+			seasonD = zoneLast.zone6D;
+			seasonN = zoneLast.zone6N;
+			latestD = zoneLast.zone6D;
+			latestN = zoneLast.zone6N;
+			break;
+		case 7:
+			shotPlace = "右侧24英尺以外";
+			seasonD = zoneLast.zone7D;
+			seasonN = zoneLast.zone7N;
+			latestD = zoneLast.zone7D;
+			latestN = zoneLast.zone7N;
+			break;
+		case 8:
+			shotPlace = "中间8-16英尺";
+			seasonD = zoneLast.zone8D;
+			seasonN = zoneLast.zone8N;
+			latestD = zoneLast.zone8D;
+			latestN = zoneLast.zone8N;
+			break;
+		case 9:
+			shotPlace = "左侧居中16-24英尺";
+			seasonD = zoneLast.zone9D;
+			seasonN = zoneLast.zone9N;
+			latestD = zoneLast.zone9D;
+			latestN = zoneLast.zone9N;
+			break;
+		case 10:
+			shotPlace = "中间16-24英尺";
+			seasonD = zoneLast.zone10D;
+			seasonN = zoneLast.zone10N;
+			latestD = zoneLast.zone10D;
+			latestN = zoneLast.zone10N;
+			break;
+		case 11:
+			shotPlace = "右侧居中16-24英尺";
+			seasonD = zoneLast.zone11D;
+			seasonN = zoneLast.zone11N;
+			latestD = zoneLast.zone11D;
+			latestN = zoneLast.zone11N;
+			break;
+		case 12:
+			shotPlace = "左侧居中24英尺以外";
+			seasonD = zoneLast.zone12D;
+			seasonN = zoneLast.zone12N;
+			latestD = zoneLast.zone12D;
+			latestN = zoneLast.zone12N;
+			break;
+		case 13:
+			shotPlace = "中间24英尺以外";
+			seasonD = zoneLast.zone13D;
+			seasonN = zoneLast.zone13N;
+			latestD = zoneLast.zone13D;
+			latestN = zoneLast.zone13N;
+			break;
+		case 14:
+			shotPlace = "右侧居中24英尺以外";
+			seasonD = zoneLast.zone14D;
+			seasonN = zoneLast.zone14N;
+			latestD = zoneLast.zone14D;
+			latestN = zoneLast.zone14N;
+			break;
+		default:
+			shotPlace = optionsPane.getCurrentSelection() + " 总计";
+			break;
+		}
+//		System.out.println(shotPlace);
+		
+		content.changeShotPlace(shotPlace);
+		content.changeSeasonPresentation(seasonN, seasonD);
+		content.changeLatestPresentation(seasonN, latestD);
+		
+	}
+	
+	class OptionPane extends JLabel{
+
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+		GameOption preseason;
+		GameOption regular;
+		
+		private String currentSelection = "季前赛";
+		
+		OptionPane(){
+			this.setBounds(0, 40, 760, 60);
+//			this.setOpaque(true);
+			this.setBackground(Color.orange);
+			this.setLayout(new GridLayout(1, 2, 5, 0));
+			
+			setOptions();
+		}
+		
+		private void setOptions(){
+			preseason = new GameOption("2014-2015 季前赛");
+			preseason.setOptionName("季前赛");
+			preseason.setObserver(this);
+			preseason.setSelect();
+			
+			regular = new GameOption("2014-2015 常规赛");
+			regular.setOptionName("常规赛");
+			regular.setObserver(this);
+			
+			preseason.setObserver(this);
+			regular.setObserver(this);
+			
+			this.add(preseason);
+			this.add(regular);
+		}
+		
+		public void selectOption(GameOption select){
+			preseason.setUnselect();
+			regular.setUnselect();
+			select.setSelect();
+			
+			currentSelection = select.getOptionName();
+			
+			if(currentSelection.equals("季前赛")){
+				isPreseason = true;
+			}else{
+				isPreseason = false;
+			}
+			
+			refresh();
+			
+			content.setCurrentPresent(select.getOptionName());
+		}
+		
+		public String getCurrentSelection(){
+			return currentSelection;
+		}
+		
+	}
+
+	class ContentPane extends JPanel{
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+		
+		private String currentPresent = "季前赛";
+		
+		private BigText shotPlaceName;
+		
+		private BigText seasonPreInRate;
+		private MiddleText seasonPreInDivision;
+		
+		private BigText latestPreInRate;
+		private MiddleText latestPreInDivision;
+
+		ContentPane(){
+			this.setBounds(0, 110, 760, 345);
+			this.setLayout(null);
+			
+			setShotPlace();
+			setSeasonPresentation();
+			setLatestPresentation();
+			setPhoto();
+		}
+		
+		private void setPhoto(){
+			PhotoLabel photo = new PhotoLabel(new Dimension(150, 300));
+			photo.setSize(300, 400);
+			photo.setImage("Aaron Brooks.png");
+//			photo.setOpaque(true);
+//			photo.setBackground(Color.ORANGE);
+			photo.setLocation(500, -100);
+			this.add(photo);
+			photo.repaint();
+			photo.setVisible(true);
+			
+//			JLabel photo = new JLabel();
+//			photo.setBounds(200, 100, 150, 300);
+//			Image image = null;
+//			try {
+//				image = ImageIO.read(new File("Aaron Brooks.png"));
+//				
+//			} catch (IOException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+//			ImageIcon icon = new ImageIcon(image);
+//			
+//			photo.setIcon(icon);
+//			this.add(photo);
+		}
+		
+		public void setCurrentPresent(String s){
+			currentPresent = s;
+			shotPlaceName.setText(s + " 总计");
+		}
+		
+		private void setShotPlace(){
+			SmallText shotPlace = new SmallText("投篮区域");
+			shotPlace.setBounds(30, 20, 80, 20);
+			this.add(shotPlace);
+			
+			shotPlaceName = new BigText();
+			shotPlaceName.setBounds(30, 45, 300, 40);
+			shotPlaceName.setText(currentPresent + " 总计"); 
+			this.add(shotPlaceName);
+		}
+		
+		private void setSeasonPresentation(){
+			SmallText seasonPresentation = new SmallText("赛季表现");
+			seasonPresentation.setBounds(30, 130, 80, 20);
+			this.add(seasonPresentation);
+			
+			seasonPreInRate = new BigText();
+			seasonPreInRate.setBounds(30, 150, 100, 40);
+			seasonPreInRate.setText("99.9" + "%");
+			this.add(seasonPreInRate);
+			
+			seasonPreInDivision = new MiddleText();
+			seasonPreInDivision.setBounds(30, 185, 100, 30);
+			seasonPreInDivision.setText("99" + "/" + "100");
+			this.add(seasonPreInDivision);
+		}
+		
+		private void setLatestPresentation(){
+
+			SmallText latestPresentation = new SmallText("近5场表现");
+			latestPresentation.setBounds(200, 130, 80, 20);
+			this.add(latestPresentation);
+
+			latestPreInRate = new BigText();
+			latestPreInRate.setBounds(200, 150, 100, 40);
+			latestPreInRate.setText("99.9" + "%");
+			this.add(latestPreInRate);
+			
+			latestPreInDivision = new MiddleText();
+			latestPreInDivision.setBounds(200, 185, 100, 30);
+			latestPreInDivision.setText("99" + "/" + "100");
+			this.add(latestPreInDivision);
+		}
+
+		public void changeShotPlace(String s){
+			shotPlaceName.setText(s);
+		}
+		
+		public void changeSeasonPresentation(int a, int b){
+			seasonPreInDivision.setText(a+"/"+b);
+			double temp = (double)(a*100/b);
+			if(temp>1){
+				seasonPreInRate.setText("Data Error");
+			}else{
+				seasonPreInRate.setText(temp+"");
+			}
+		}
+		
+		public void changeLatestPresentation(int a, int b){
+			latestPreInDivision.setText(a+"/"+b);
+			double temp = (double)(a*100/b);
+			if(temp>1){
+				latestPreInRate.setText("Data Error");
+			}else{
+				latestPreInRate.setText(temp+"");
+			}
+		}
+	
+	
+	}
+
+	
+	class DataOptionLabel extends JLabel implements MouseListener{
+
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+		
+		private String currentSelect = "表现";
+
+		JLabel presentButton;
+		JLabel distributeButton;
+		
+		public DataOptionLabel() {
+			this.setSize(105, 35);
+			this.setOpaque(true);
+			this.setBackground(new Color(24, 24, 70));
+			this.setLayout(null);
+			this.addMouseListener(this);
+			
+			setPresent();
+			setDistribute();
+			
+			selectLeft();
+		}
+		
+		//表现
+		private void setPresent(){
+			presentButton = new JLabel();
+			presentButton.setText("表现");
+			presentButton.setFont(new Font("微软雅黑", Font.BOLD, 15));
+			presentButton.setForeground(Color.white);
+			presentButton.setBackground(new Color(44, 44, 120));
+//			presentButton.setOpaque(true);
+			presentButton.setHorizontalAlignment(JLabel.CENTER);
+			presentButton.setBounds(5, 5, 45, 25);
+			this.add(presentButton);
+			
+		}
+		
+		//分布
+		private void setDistribute(){
+			distributeButton = new JLabel();
+			distributeButton.setText("分布");
+			distributeButton.setFont(new Font("微软雅黑", Font.BOLD, 15));
+			distributeButton.setForeground(Color.white);
+			distributeButton.setBackground(new Color(44, 44, 120));
+			distributeButton.setHorizontalAlignment(JLabel.CENTER);
+			distributeButton.setBounds(55, 5, 45, 25);
+//			distributeButton.setOpaque(true);
+			this.add(distributeButton);
+		}
+		
+		private void selectLeft(){
+			presentButton.setOpaque(true);
+			distributeButton.setOpaque(false);
+			this.currentSelect = "表现";
+			DiscriptionPane.this.isPerformance = true;
+//			System.out.println("left");
+			this.repaint();
+		}
+		
+		private void selectRight(){
+			presentButton.setOpaque(false);
+			distributeButton.setOpaque(true);
+			this.currentSelect = "分布";
+			DiscriptionPane.this.isPerformance = false;
+//			System.out.println("right");
+			this.repaint();
+		}
+		
+		public String getSelectedOption(){
+			return currentSelect;
+		}
+
+		@Override
+		public void mouseClicked(MouseEvent e) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void mousePressed(MouseEvent e) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void mouseReleased(MouseEvent e) {
+			int x = e.getX();
+//			System.out.println(x + "   "+this.getWidth()/2);
+			if(x < this.getWidth()/2){
+				selectLeft();
+			}else{
+				selectRight();
+			}
+			refresh();
+		}
+
+		@Override
+		public void mouseEntered(MouseEvent e) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void mouseExited(MouseEvent e) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+	}
+
+
+
+	//季前赛还是常规赛
+	class GameOption extends JLabel implements MouseListener{
+	
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+		
+		OptionPane observer;
+		String optionName;
+		
+		private boolean isSelected = false;
+		
+		
+		public GameOption(String text){
+			this.setBackground(Color.BLACK);
+			this.setForeground(Color.WHITE);
+			this.setOpaque(true);
+			this.setFont(new Font("微软雅黑", Font.BOLD, 18));
+			this.setHorizontalAlignment(JLabel.CENTER);
+			this.setText(text);
+			
+			this.addMouseListener(this);
+		}
+		
+		public void setOptionName(String s){
+			this.optionName = s;
+		}
+		
+		public String getOptionName(){
+			return optionName;
+		}
+		
+		public void setObserver(OptionPane observer){
+			this.observer = observer;
+		}
+	
+		public void setUnselect(){
+			this.setBackground(unselected);
+			isSelected = false;
+		}
+		
+		public void setSelect(){
+			this.setBackground(selected);
+			isSelected = true;
+		}
+		
+		public void mouseClicked(MouseEvent e) {
+			
+		}
+	
+		@Override
+		public void mousePressed(MouseEvent e) {
+			// TODO Auto-generated method stub
+			
+		}
+	
+		@Override
+		public void mouseReleased(MouseEvent e) {
+			observer.selectOption(this);
+			setSelect();
+		}
+	
+		@Override
+		public void mouseEntered(MouseEvent e) {
+			if(!isSelected){
+				this.setBackground(selected);
+			}
+		}
+	
+		@Override
+		public void mouseExited(MouseEvent e) {
+			if(!isSelected){
+				this.setBackground(unselected);
+			}
+		}
+		
+	}
+}
+class SmallText extends JTextField{
+	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	public SmallText(String text) {
+		this.setOpaque(false);
+		this.setFont(new Font("微软雅黑", Font.PLAIN, 14));
+		this.setEditable(false);
+		this.setBorder(null);
+		this.setText(text);
+	}
+}
+
+class MiddleText extends JTextField{
+	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	public MiddleText() {
+		this.setOpaque(false);
+		this.setFont(new Font("微软雅黑", Font.PLAIN + Font.BOLD, 19));
+		this.setEditable(false);
+		this.setForeground(new Color(120, 120, 120));
+		this.setBorder(null);
+	}
+}
+
+class BigText extends JTextField{
+	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	public BigText() {
+		this.setOpaque(false);
+		this.setFont(new Font("微软雅黑", Font.BOLD, 32));
+		this.setForeground(Color.DARK_GRAY);
+		this.setEditable(false);
+		this.setBorder(null);
+	}
+}

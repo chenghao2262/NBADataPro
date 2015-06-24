@@ -1,0 +1,427 @@
+package businesslogic.playerbl;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+
+
+import org.apache.commons.math3.distribution.TDistribution;
+import org.apache.commons.math3.linear.RealVector;
+import org.apache.commons.math3.linear.SingularMatrixException;
+import org.apache.commons.math3.stat.regression.OLSMultipleLinearRegression;
+
+import po.stats.RegressionPO;
+import data.playerdata.PlayerData;
+
+import dataservice.playerdataservice.PlayerDataService;
+import dataservice.playerdataservice.PlayerData_stub;
+//import org.python.antlr.ast.Str;
+import po.playerpo.PlayerPO;
+import vo.HotZoneVO;
+import vo.playervo.HotPlayersVO;
+import vo.playervo.PlayerVO;
+import blservice.playerblservice.PlayerBLService;
+import blservice.playerblservice.sortParam;
+import businesslogic.statsbl.Compare;
+
+public class PlayerBL implements PlayerBLService {
+    PlayerDataService playerDataService = new PlayerData();
+	
+	PlayerDataService pds = new PlayerData();
+	
+    @Override
+    public PlayerVO findPlayerData(int playerId, int season) {
+        PlayerPO playerPO = playerDataService.findPlayerData(playerId, season);
+        return change(playerPO);
+    }
+
+    private PlayerVO change(PlayerPO playerPO) {
+        PlayerVO playerVO = new PlayerVO();
+        playerVO.id = playerPO.id;
+        playerVO.photo = playerPO.photo;
+        playerVO.division = playerPO.division;
+        playerVO.name = playerPO.playerName;
+        playerVO.team = playerPO.Team;
+        playerVO.teamName = playerPO.abbr;
+        playerVO.position = playerPO.position;
+        playerVO.league = playerPO.league;
+        playerVO.hight = String.valueOf((double) playerPO.height / 100);
+        playerVO.weigth = String.valueOf((double) playerPO.weight / 10);
+        playerVO.school = playerPO.school;
+        playerVO.birth = playerPO.birth;
+        playerVO.exp = playerPO.exp;
+        playerVO.age = playerPO.age;
+        playerVO.assist = playerPO.assist;
+        playerVO.blockShot = playerPO.BS;
+        playerVO.defend = playerPO.defense;
+        playerVO.efficiency = playerPO.effiency;
+        playerVO.fault = playerPO.turnover;
+        playerVO.foul = playerPO.foul;
+        playerVO.minute = playerPO.timeOnCourt / 60;
+        playerVO.numOfGame = playerPO.matchNum;
+        playerVO.offend = playerPO.offensive;
+        playerVO.penalty = playerPO.FTP;
+        playerVO.point = playerPO.score;
+        playerVO.rebound = playerPO.rebound;
+        playerVO.shot = playerPO.FGP;
+        playerVO.start = playerPO.startSession;
+        playerVO.steal = playerPO.steal;
+        playerVO.doubleTwo = playerPO.doubleTwo;
+        playerVO.three = playerPO.TPSP;
+        playerVO.avgAssist = playerPO.Avgassist;
+        playerVO.avgBlockShot = playerPO.AvgBS;
+        playerVO.avgDefend = playerPO.Avgdefense;
+        playerVO.avgFault = playerPO.Avgturnover;
+        playerVO.avgFoul = playerPO.Avgfoul;
+        playerVO.avgMinute = playerPO.avgMinute;
+        playerVO.avgOffend = playerPO.Avgoffensive;
+        playerVO.avgPoint = playerPO.Avgscore;
+        playerVO.avgRebound = playerPO.Avgrebound;
+        playerVO.avgSteal = playerPO.Avgsteal;
+        playerVO.assistEfficient = playerPO.assistP;
+        playerVO.blockShotEfficient = playerPO.BSP;
+        playerVO.defendReboundEfficient = playerPO.DREB;
+        playerVO.faultEfficient = playerPO.turnoverP;
+        playerVO.frequency = playerPO.utiliation;
+        playerVO.gmSc = playerPO.GmSc;
+        playerVO.offendReboundEfficient = playerPO.OREB;
+        playerVO.realShot = playerPO.TSP;
+        playerVO.reboundEfficient = playerPO.reboundP;
+        playerVO.shotEfficient = playerPO.OSE;
+        playerVO.stealEfficient = playerPO.stealP;
+        return playerVO;
+    }
+
+    @Override
+    public PlayerVO findPlayerData(String name, int season) {
+        PlayerPO playerPO = playerDataService.findPlayerData(name, season);
+        return change(playerPO);
+    }
+
+    @Override
+    public ArrayList<PlayerVO> findPlayers(String msg) {
+        ArrayList<PlayerPO> arrayList = playerDataService.findPlayers(msg);
+        ArrayList<PlayerVO> res = new ArrayList<>();
+        for (int i = 0; i < arrayList.size(); i++) {
+            res.add(change(arrayList.get(i)));
+        }
+        return res;
+    }
+
+    @Override
+    public ArrayList<PlayerVO> sortPlayerInfo(ArrayList<sortParam> sortBy,
+                                              int season) {
+        String order = getOrderBy(sortBy);
+        ArrayList<PlayerPO> arrayList = playerDataService.sortPlayer(order, season);
+        ArrayList<PlayerVO> res = new ArrayList<>();
+        for (int i = 0; i < arrayList.size(); i++) {
+            res.add(change(arrayList.get(i)));
+        }
+        return res;
+    }
+
+
+    @Override
+    public ArrayList<PlayerVO> sortPlayerNormal(ArrayList<sortParam> sortBy,
+                                                int season) {
+        return sortPlayerInfo(sortBy, season);
+    }
+
+    @Override
+    public ArrayList<PlayerVO> sortPlayerNormalAvg(ArrayList<sortParam> sortBy,
+                                                   int season) {
+        return sortPlayerInfo(sortBy, season);
+    }
+
+    @Override
+    public ArrayList<PlayerVO> sortPlayerHigh(ArrayList<sortParam> sortBy,
+                                              int season) {
+        return sortPlayerInfo(sortBy, season);
+    }
+
+    @Override
+    public ArrayList<PlayerVO> filterInfo(ArrayList<sortParam> sortBy,
+                                          ArrayList<String> position, ArrayList<String> league, int numS,
+                                          int numE, int season) {
+        String order = getOrderBy(sortBy);
+        ArrayList<PlayerPO> arrayList = playerDataService.filter(order, position, league, numS, numE, season);
+        ArrayList<PlayerVO> res = new ArrayList<>();
+        for (int i = 0; i < arrayList.size(); i++) {
+            res.add(change(arrayList.get(i)));
+        }
+        return res;
+    }
+
+    private String getOrderBy(ArrayList<sortParam> sortBy) {
+        String res = "";
+        for (int i = 0; i < sortBy.size(); i++) {
+            sortParam sp = sortBy.get(i);
+            String temp = getSort(sp.field);
+            if (temp != null) {
+                res = res + " " + getSort(sp.field);
+                if (sp.isDesc)
+                    res = res + " desc,";
+                else
+                    res = res + ",";
+            }
+        }
+        return res.substring(0, res.length() - 1);
+    }
+
+    private String getSort(String field) {
+        switch (field) {
+            case "id":
+                return "id";
+            case "name":
+                return "playerName";
+            case "team":
+                return "Team";
+            case "teamName":
+                return "abbr";
+            case "hight":
+                return "height";
+            case "weigth":
+                return "weight";
+            case "school":
+                return "school";
+            case "birth":
+                return "birth";
+            case "exp":
+                return "exp";
+            case "age":
+                return "age";
+            case "assist":
+                return "assist";
+            case "blockShot":
+                return "BS";
+            case "defend":
+                return "defense";
+            case "efficiency":
+                return "effiency";
+            case "fault":
+                return "turnover";
+            case "foul":
+                return "foul";
+            case "minute":
+                return "timeOnCourt";
+            case "numOfGame":
+                return "matchNum";
+            case "offend":
+                return "offensive";
+            case "penalty":
+                return "FTP";
+            case "point":
+                return "score";
+            case "rebound":
+                return "rebound";
+            case "shot":
+                return "FGP";
+            case "start":
+                return "startSession";
+            case "steal":
+                return "steal";
+            case "doubleTwo":
+                return "doubleTwo";
+            case "three":
+                return "TPSP";
+            case "avgAssist":
+                return "Avgassist";
+            case "avgBlockShot":
+                return "AvgBS";
+            case "avgDefend":
+                return "Avgdefense";
+            case "avgFault":
+                return "Avgturnover";
+            case "avgFoul":
+                return "Avgfoul";
+            case "avgMinute":
+                return "avgMinute";
+            case "avgOffend":
+                return "Avgoffensive";
+            case "avgPoint":
+                return "Avgscore";
+            case "avgRebound":
+                return "Avgrebound";
+            case "avgSteal":
+                return "Avgsteal";
+            case "assistEfficient":
+                return "assistP";
+            case "blockShotEfficient":
+                return "BSP";
+            case "defendReboundEfficient":
+                return "DREB";
+            case "faultEfficient":
+                return "turnoverP";
+            case "frequency":
+                return "utiliation";
+            case "gmSc":
+                return "GmSc";
+            case "offendReboundEfficient":
+                return "OREB";
+            case "realShot":
+                return "TSP";
+            case "reboundEfficient":
+                return "reboundP";
+            case "shotEfficient":
+                return "OSE";
+            case "stealEfficient":
+                return "stealP";
+        }
+        return null;
+    }
+
+    @Override
+    public ArrayList<PlayerVO> filterNormal(ArrayList<sortParam> sortBy,
+                                            ArrayList<String> position, ArrayList<String> league, int numS,
+                                            int numE, int season) {
+        return filterInfo(sortBy, position, league, numS, numE, season);
+    }
+
+    @Override
+    public ArrayList<PlayerVO> filterNormalAvg(ArrayList<sortParam> sortBy,
+                                               ArrayList<String> position, ArrayList<String> league, int numS,
+                                               int numE, int season) {
+        return filterInfo(sortBy, position, league, numS, numE, season);
+    }
+
+    @Override
+    public ArrayList<PlayerVO> filterHigh(ArrayList<sortParam> sortBy,
+                                          ArrayList<String> position, ArrayList<String> league, int numS,
+                                          int numE, int season) {
+        return filterInfo(sortBy, position, league, numS, numE, season);
+    }
+
+    @Override
+    public ArrayList<HotPlayersVO> DailyKing(int num, String sortBy, String date) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+
+    @Override
+    public ArrayList<HotPlayersVO> SeasonKing(int num, String sortBy, int season) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public ArrayList<HotPlayersVO> hotPlayer(int num, String sortBy) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public PlayerVO avgLeague(char league, int season) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public ArrayList<HotZoneVO> getHotZone(int playerId, boolean isPerformance,
+                                           boolean isPreSeason,int season) {
+        int matchType = 2;
+        if (isPreSeason){
+            matchType = 4;
+        }
+        return playerDataService.getHotZone(playerId,isPerformance,matchType,season);
+    }
+
+    @Override
+    public int[] playerVS(int player1id, int player2id, int season, ArrayList<String> attris) {
+        if (attris.size() != 5)
+            return null;
+        int[] result = new int[10];
+        PlayerDataService pds = new PlayerData_stub();
+        Compare cmp = new Compare(0.05);
+        for (int i = 0; i < 5; i++) {
+            double[] p1 = pds.specDataOfSeason(player1id, attris.get(i), season);
+            double[] p2 = pds.specDataOfSeason(player2id, attris.get(i), season);
+            result[2 * i] = cmp.compareE(p1, p2);
+            result[2 * i] = cmp.compareVar(p1, p2);
+        }
+        return result;
+    }
+
+
+    @Override
+    public double[] freeThrowShooting(int playerID, int season, boolean isClutch) {
+        return playerDataService.getFreeThrowShooting(playerID,season,isClutch);
+    }
+
+
+	@Override
+	public ArrayList<ArrayList<RegressionItem>> playerRegression(int playerID, int season) {
+		//对篮板，助攻，抢断，盖帽，失误，犯规对得分的影响的多元回归
+		String[] attris = new String[]{"篮板","助攻","抢断","盖帽","失误","犯规"};
+		RegressionPO po = pds.playerRegression(playerID, season);
+		OLSMultipleLinearRegression regression = new OLSMultipleLinearRegression();
+		regression.newSampleData(po.points, po.x);
+
+		if(regression.calculateRSquared()<0.5||po.points.length<8)
+			return null;
+
+		double[] values = regression.estimateRegressionParameters();
+		double[] standardError = new double[]{};
+		
+		TDistribution td = new TDistribution(po.points.length-7);
+		double limit = td.inverseCumulativeProbability(0.975);
+		try{
+			standardError = regression.estimateRegressionParametersStandardErrors();
+		}catch (SingularMatrixException e){
+			standardError = new double[]{limit,limit,limit,limit,limit,limit,limit};
+		}
+		
+		
+		ArrayList<RegressionItem> pstvRelation = new ArrayList<RegressionItem>();
+		ArrayList<RegressionItem> ngtvRelation = new ArrayList<RegressionItem>();
+		for(int i=1;i<values.length;i++){
+			if(standardError[i]>=limit){
+				if(values[i]>0)
+					pstvRelation.add(new RegressionItem(attris[i],values[i]));
+				if(values[i]<0)
+					ngtvRelation.add(new RegressionItem(attris[i],values[i]));
+			}
+				
+		}
+		
+		Collections.sort( pstvRelation);
+		Collections.sort( ngtvRelation);
+		
+		ArrayList<ArrayList<RegressionItem>> result = new ArrayList<ArrayList<RegressionItem>>();
+		result.add(pstvRelation);
+		result.add(ngtvRelation);
+		
+		return result;
+	}
+
+
+    @Override
+    public double[] reBound(int playerID, int season, boolean isClutch) {
+        return playerDataService.getReBound(playerID,season,isClutch);
+    }
+
+
+    @Override
+    public String[] floorStats(int teamID, int season) {
+        return playerDataService.getFloorStats(teamID,season);
+    }
+
+    @Override
+    public String[] scoring(int teamID, int season) {
+        return playerDataService.getScoring(teamID,season);
+    }
+
+
+    public ArrayList<PlayerVO> getTeamMemberList(int teamID,int season) {
+        ArrayList<PlayerPO> arrayList = playerDataService.getTeamMemberList(teamID,season);
+        return change(arrayList);
+    }
+
+    private ArrayList<PlayerVO> change(ArrayList<PlayerPO> arrayList){
+        ArrayList<PlayerVO> res = new ArrayList<>();
+        for(int i = 0; i < arrayList.size(); i++){
+            res.add(change(arrayList.get(i)));
+        }
+        return res;
+    }
+}

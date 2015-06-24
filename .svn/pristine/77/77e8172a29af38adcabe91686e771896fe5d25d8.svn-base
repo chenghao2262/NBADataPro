@@ -1,0 +1,172 @@
+package dataservice.playerdataservice;
+
+import java.util.ArrayList;
+
+import po.stats.EvolutionPO;
+import po.stats.FiveUnitPO;
+import po.stats.OnOffPO;
+import po.stats.RegressionPO;
+import po.stats.ShotAnlsPO;
+import vo.AttriOption;
+
+public class PlayerData_stub implements PlayerDataService{
+
+	@Override
+	public double[] specDataOfSeason(int playerID, String attri, int season) {
+		return new double[]{99,100,100,100,100,100,110};
+	}
+
+	@Override
+	public FiveUnitPO top5manGroup(int playerID, int season, AttriOption attri) {
+		FiveUnitPO po = new FiveUnitPO();
+		po.unitsName = new String[]{"dd","ff","gg","hh","ww","ee","yy","pp","oo","ii"};
+		po.datas = new double[]{46,6,34,78,56,45,90,76,45,63};
+		return po;
+	}
+
+	@Override
+	public double[][] position(int playerID, int season, AttriOption attri) {
+		double[] own = new double[]{20.2,12.7,13.3,0,0};
+		double[] opp = new double[]{17.4,18.0,16.5,0,0};
+		double[] net = new double[]{2.8,-5.3,-3.1,0,0};
+		return new double[][]{own,opp,net};
+	}
+
+	@Override
+	public ShotAnlsPO shootAnalysis(int playerID, int season) {
+		ShotAnlsPO po = new ShotAnlsPO();
+		po.Att = new double[]{0.95,0.04,0.01,0};
+		po.eFG = new double[]{0.476,0.605,0.879,0.528};
+		po.Ast = new double[]{0.72,0.57,0.72,0};
+		po.Pts = new double[]{56.7,24.0,2.7,0.7};
+		po.Blk = new double[]{2,2,0,10};
+		return po;
+	}
+
+	@Override
+	public ShotAnlsPO shootAnalysis_clutch(int playerID, int season) {
+		ShotAnlsPO po = new ShotAnlsPO();
+		po.Att = new double[]{0.95,0.04,0.01,0};
+		po.eFG = new double[]{0.476,0.605,0.879,0.528};
+		po.Ast = new double[]{0.72,0.57,0.72,0};
+		po.Pts = new double[]{56.7,24.0,2.7,0.7};
+		po.Blk = new double[]{2,2,0,10};
+		return po;
+	}
+
+	@Override
+	public ShotAnlsPO shotClockAnls(int playerID, int season) {
+		ShotAnlsPO po = new ShotAnlsPO();
+		po.Att = new double[]{0.95,0.04,0.01,0};
+		po.eFG = new double[]{0.476,0.605,0.879,0.528};
+		po.Ast = new double[]{0.72,0.57,0.72,0};
+		po.Pts = new double[]{56.7,24.0,2.7,0.7};
+		po.Blk = new double[]{2,2,0,10};
+		return po;
+	}
+
+	@Override
+	public ShotAnlsPO shotClockAnls_clutch(int playerID, int season) {
+		ShotAnlsPO po = new ShotAnlsPO();
+		po.Att = new double[]{0.95,0.04,0.01,0};
+		po.eFG = new double[]{0.476,0.605,0.879,0.528};
+		po.Ast = new double[]{0.72,0.57,0.72,0};
+		po.Pts = new double[]{56.7,24.0,2.7,0.7};
+		po.Blk = new double[]{2,2,0,10};
+		return po;
+	}
+
+	@Override
+	public EvolutionPO envolution(ArrayList<String> names,
+			String attri) {
+		EvolutionPO po  = new EvolutionPO();
+		double[] d1 = new double[]{45,69,46,38,74,64,39}; 
+		double[] d2 = new double[]{56,47,74,56,93,54,69}; 
+		double[] d5 = new double[]{37,95,45,84,82,89,39}; 
+		double[] d8 = new double[]{67,87,65,37,87,54,65}; 
+		double[] d6 = new double[]{75,47,32,56,26,64,39}; 
+		double[] d7 = new double[]{38,47,51,61,71,43,67};
+		double[][] d3 = new double[][]{d6,d7,d1,d7,d2,d8};
+		double[][] d4 = new double[][]{d7,d5,d8,d6,d7,d2}; 
+		ArrayList<double[][]> ldd = new ArrayList<double[][]>();
+		ldd.add(d3);
+		ldd.add(d4);
+		po.datas = ldd;
+		po.years = new double[]{2010,2011,2012,2013,2014,2015};
+		
+		return po;
+	}
+
+	@Override
+	public OnOffPO on_off(int playerID, int season) {
+		OnOffPO po = new OnOffPO();
+		po.pPts_on = new double[]{114.5,103.1,11.3};
+		po.pPts_off = new double[]{103.7,105.4,-1.7};
+		po.pPts_net = new double[]{10.7,-2.3,13.0};
+		po.Pts_on = new double[]{5431,4808,623};
+		po.Pts_off = new double[]{2978,3156,-178};
+		po.Pts_net = new double[]{2453,1652,801};
+		po.FG_on = new double[]{55.7,48.6};
+		po.FG_off = new double[]{47.7,50.0};
+		po.FG_net = new double[]{8.0,-1.4};
+		po.Ast_on = new double[]{69,65};
+		po.Ast_off = new double[]{63,63};
+		po.Ast_net = new double[]{6,2};
+		po.Blk_on = new double[]{5,5};
+		po.Blk_off = new double[]{6,5};
+		po.Blk_net = new double[]{1,0};
+		po.reb_on = new double[]{24,71,47.5};
+		po.reb_off = new double[]{27.5,71.4,49.4};
+		po.reb_net = new double[]{-3.5,-0.4,-2.0};
+		po.FTM_on = new double[]{15,19,14,18};
+		po.FTM_off = new double[]{17,23,16,22};
+		po.FTM_net = new double[]{-2,-4,2,4};
+		po.turnover_on = new double[]{13,15,2};
+		po.turnover_off = new double[]{14,16,2};
+		po.turnover_net = new double[]{1,-1,0};
+		po.foul_on = new double[]{16,19,3};
+		po.foul_off = new double[]{19,20,-1};
+		po.foul_net = new double[]{3,-1,-2};
+		
+		return po;
+	}
+
+	@Override
+	public double[] turnovers(int playerID, int season) {
+		return new double[]{7,76,24,0,15.1};
+	}
+
+	@Override
+	public double[] turnovers_clutch(int playerID, int season) {
+		return new double[]{2,1,1,0,10.8};
+	}
+
+	@Override
+	public double[] passing(int playerID, int season) {
+		return new double[]{34,75,69,18,196,76,2.6,3.3,3.9};
+	}
+
+	@Override
+	public double[] passing_clutch(int playerID, int season) {
+		return new double[]{0,3,0,2,5,0,5.0,4.8,2.6};
+	}
+
+	@Override
+	public double[] shotBlock(int playerID, int season) {
+		return new double[]{20,22,0,0.01,0.02,0,42,0.8,0.01,82,0.51,2.1};
+	}
+
+	@Override
+	public double[] shotBlock_clutch(int playerID, int season) {
+		return new double[]{1,1,0,0.01,0.03,0,2,1.1,0.016,4,0.5,3.6};
+	}
+
+	@Override
+	public RegressionPO playerRegression(int playerID, int season) {
+		RegressionPO po = new RegressionPO();
+		po.points = new double[]{3,7,11,15,16,17,45,50};
+		po.x = new double[][]{{1, 2}, {3, 4}, {5, 6},{7,8},{9,10},{11,12},{13,14},{15,16}} ;
+		return po;
+	}
+
+}

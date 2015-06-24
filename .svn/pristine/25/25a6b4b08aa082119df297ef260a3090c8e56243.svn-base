@@ -1,0 +1,139 @@
+package presentation.diagram;
+
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Point;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.util.ArrayList;
+
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+
+import blservice.chartsblservice.ChartBLService;
+import blservice.playerblservice.PlayerBLService;
+import businesslogic.playerbl.PlayerBL_stub;
+import businesslogic.statsbl.ChartBL;
+import presentation.common.GeneralComboBox;
+import vo.AttriOption;
+
+public class Evolution extends Diagram{
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	ArrayList<String> chooses = new ArrayList<String>();
+	GeneralComboBox chooser;
+	
+	ArrayList<String> name;
+	boolean isteam;
+	
+	JPanel evolutionPanel;
+	
+	public static String selectedItem;
+	
+	ChartBLService chartbl = new ChartBL();
+	PlayerBLService playerbl = new PlayerBL_stub();
+
+	public Evolution(ArrayList<String> NAME,boolean isTeam) {
+		super("     演化历程");
+		this.name = NAME;
+		this.isteam = isTeam;
+		initialise();
+	}
+
+	void initialise(){
+		if(isteam){
+			selectedItem = "属性(默认胜率)";
+		}else{
+			selectedItem = "属性(默认胜率)";
+		}
+		setChooses();
+		setChooserComboBox();
+		setEvolutionPanel();
+	}
+	
+	public void setChooses(){
+		chooses.clear();
+		if(isteam){
+			chooses.clear();
+			chooses.add("属性(默认胜率)");
+			chooses.add ("分钟");
+			chooses.add("进攻");
+			chooses.add("负场");
+		}else{
+			chooses.add("属性(默认胜率)");
+			chooses.add("防守");
+			chooses.add("+/-");
+			chooses.add("胜场");
+		}
+	}
+	
+	public static AttriOption judgeAttri(String selectedItem){
+		switch(selectedItem){
+		case "属性(默认胜率)":return AttriOption.evolution_a;
+		case "分钟":return AttriOption.evolution_a;
+		case "进攻":return AttriOption.evolution_b;
+		case "防守":return AttriOption.evolution_c;
+		case "+/-":return AttriOption.evolution_d;
+		case "胜场":return AttriOption.evolution_e;
+		case "负场":return AttriOption.evolution_f;
+			default: return null;
+		}
+	}
+	
+	public void setChooserComboBox(){
+		chooser = new GeneralComboBox(chooses);
+		chooser.setsize(200, 40);
+		chooser.setlocation(new Point(1000,10));
+		chooser.addItemListener(new chooserListener());
+		titleLabel.add(chooser);
+		this.updateUI();
+	} 
+	
+	class chooserListener implements ItemListener{
+		@Override
+		public void itemStateChanged(ItemEvent e) {
+			int choosed = e.getStateChange();
+			if(choosed == ItemEvent.SELECTED){
+				System.out.println(e.getItem());
+				Evolution.selectedItem = e.getItem().toString();
+				Evolution.this.setVisible(false);
+				if(evolutionPanel != null){
+					remove(evolutionPanel);
+				}
+				setEvolutionPanel();
+				Evolution.this.setVisible(true);
+			}
+		}
+	}
+	
+	void setEvolutionPanel(){
+		evolutionPanel = new JPanel();
+//		JPanel jp = chartbl.evolution(name,judgeAttri(chooser.getSelectedItem().toString()),isteam);
+		JPanel jp = chartbl.evolution(name,judgeAttri(selectedItem),isteam);
+
+		evolutionPanel.setBackground(Color.WHITE);
+		evolutionPanel.setOpaque(true);
+		
+		evolutionPanel.setBounds(100,60, 1000, 325);
+		jp.setPreferredSize(new Dimension(600,320));
+			
+		evolutionPanel.add(jp);
+		this.add(evolutionPanel);
+	}
+	
+	public static void main(String[] args){
+		ArrayList<String> name = new ArrayList<String>();
+		name.add("1");		name.add("2");
+		JFrame jf = new JFrame();
+		jf.setLayout(null);
+		jf.setSize(1280,700);
+		jf.setLocationRelativeTo(null);
+		jf.add(new Evolution(name,false));
+		jf.setVisible(true);
+	}	
+
+}

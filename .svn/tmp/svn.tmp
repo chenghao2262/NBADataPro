@@ -1,0 +1,845 @@
+ package presentation.team.teamDetail;
+
+import java.awt.Color;
+import java.awt.Point;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.util.ArrayList;
+
+import javax.swing.BorderFactory;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+
+import blservice.teamblservice.TeamBLService;
+import businesslogic.teambl.TeamBL_stub;
+import presentation.common.SelectLabel;
+import presentation.diagram.DiagramList;
+import presentation.diagram.Evolution;
+import presentation.diagram.FiveMan;
+import presentation.diagram.OFF_DEF;
+import presentation.diagram.Position;
+import presentation.diagram.Shooting;
+import presentation.diagram.Turnover_Fouls;
+import presentation.diagram.WLProfiles;
+import presentation.hotregion.HotRegionPane;
+import presentation.main.Mainframe;
+import presentation.team.vs.TeamVSContentPanel;
+import presentation.team.vs.TeamVSTopPanel;
+import vo.teamvo.TeamVO;
+//过往查询
+public class TeamMiddlePanel extends JPanel{
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	
+	SelectLabel DataLabel;//球队资料
+	SelectLabel MemberLabel;//球队阵容
+	SelectLabel LatestMatchLabel;//近5场比赛
+	SelectLabel PastLabel;//过往查询
+	SelectLabel CompareTeamsLabel;//球队对比
+	SelectLabel	HotZoneLabel;//热区
+	SelectLabel	DiagramLabel;//图表
+	
+	TeamDetailTopPanel teamDetailTopPanel;
+	TeamVSTopPanel teamVSTopPanel;
+	
+	TeamDataPanel teamDataPanel;
+	TeamMemberPanel teamMemberPanel;
+	TeamRecent5MatchPanel teamRecent5MatchPanel;
+	TeamSchedulePanel teamSchedulePanel;
+	public TeamVSContentPanel teamVSContentPanel;
+	HotRegionPane hotZonePanel;
+	
+	/*
+	 * 
+	 */
+	DiagramList diagramList;
+	
+	TeamVO vo;
+	public int season = 2014 ;//默认最近赛季
+	String name;
+	String nameOPP = "0";//为了球队演化做两球队对比时区分
+	public static int type;
+	
+	public String digramItemSelected = "五人组合";//默认
+	
+	ArrayList<Double> team = new ArrayList<Double>();
+	ArrayList<Double> avg = new ArrayList<Double>();//初始为联盟平均值
+	ArrayList<SelectLabel> selectLabelGroups = new ArrayList<SelectLabel>();
+	ArrayList<String> itemsNeedAdd = new ArrayList<String>();
+	static ArrayList<String> diagramClassification = new ArrayList<String>();
+	
+	/**Diagram**/
+	FiveMan fiveManPanel;
+	Shooting shootPanel;
+	OFF_DEF off_defPanel;
+	Turnover_Fouls turnoverfoulsPanel;
+	Position positionPanel;
+	Evolution evolutionPanel;
+	WLProfiles wlprofilePanel;
+	
+	TeamBLService tds =  new TeamBL_stub();
+
+	public TeamMiddlePanel(String name){
+		this.setLayout(null);
+		this.setBounds(0, 30, 1280,675);
+		this.setBackground(Color.WHITE);
+		this.setOpaque(true);
+		
+		this.name = name;
+		this.vo = tds.findTeamInfo(name,season);
+		setAttri(true);
+		setTopPanel();
+		setContrastLabel();
+		setMemberLabel();
+		setLatestMatchLabel();
+		setPastLabel();
+		setCompareTeamsLabel();
+		setHotZoneLabel();
+		setDiagramLabel();
+
+		setTeamDataPanel();
+		setSelectedGroups(DataLabel);
+	
+	}
+	
+	//非球队对比部分的观察者模式更新	
+	/**season变化加上图表**/
+	public void updateNoVS(int season){
+		this.season = season;
+		this.vo = tds.findTeamInfo(name,season);
+		teamDetailTopPanel.updateTeamDetailTopPanel(vo);
+		if(DataLabel.isSelected){
+			if(teamDataPanel!=null)
+				this.remove(teamDataPanel);
+			setTeamDataPanel(); 
+		}
+		if(MemberLabel.isSelected){
+			if(teamMemberPanel!=null)
+				this.remove(teamMemberPanel);
+			setTeamMemberPanel();
+		}
+		updateDiagram(digramItemSelected);
+	}
+	
+	//球队对比部分的观察者模式更新	
+	public void updateVS(int season){
+		this.season = season;
+		this.vo = tds.findTeamInfo(name,season);
+		if(CompareTeamsLabel.isSelected){
+//			if(teamVSContentPanel!=null)
+//				this.remove(teamVSContentPanel); 
+			setAttri(false);
+			teamVSContentPanel.updateVSContentPanel(team,avg,false,new Point(0,0));
+			teamVSContentPanel.updateUI();
+//			setTeamVSPanel(team,avg); 
+		}
+	}
+	
+	public void updateEvolutionOPP(String name){
+		this.nameOPP = name;
+		updateDiagram("演化历程");
+	}
+	
+	//图表部分的更新,DiagramList
+	public void updateDiagram(String diagramType){
+		this.digramItemSelected = diagramType;
+		System.out.println(digramItemSelected);
+		this.setVisible(false);
+		clearSpaceForDiagram();
+		if(digramItemSelected == "演化历程"){
+			/**到达对比top**/
+			if(teamDetailTopPanel.getParent() != null){
+				remove(teamDetailTopPanel);
+			}
+			if(teamVSTopPanel != null){
+				remove(teamVSTopPanel);
+			}
+			setVSTopPanel(TeamMiddlePanel.this);
+		}else{
+			if(teamVSTopPanel != null){
+				remove(teamVSTopPanel);
+			}
+			if(teamDetailTopPanel.getParent() != null){
+				teamDetailTopPanel.updateTeamDetailTopPanel(vo);
+			}else{
+				setTopPanel();
+			}
+		}
+		switch(digramItemSelected){
+		case"五人组合":setFiveManPanel();break;
+		case"投篮分析":setShootingPanel();break;
+		case"攻防对比":setOFF_DEFPanel();break;
+		case"失误犯规分析":setTurnoverFoulsPanel();break;
+		case"位置分析":setPositionPanel();break;
+		case"演化历程":setEvolutionPanel();break;
+		case"胜负分析":setWLProfiles();break;
+			default:break;
+		}
+		this.setVisible(true);
+	}
+	
+	void clearSpaceForDiagram(){
+		if(teamDataPanel != null){
+			remove(teamDataPanel);
+		}
+		if(teamMemberPanel != null){
+			remove(teamMemberPanel);
+		}
+		if(teamRecent5MatchPanel != null){
+			remove(teamRecent5MatchPanel);
+		}
+		if(teamSchedulePanel != null){
+			remove(teamSchedulePanel);
+		}
+		if(teamVSContentPanel != null){
+			remove(teamVSContentPanel);
+		}
+		if(hotZonePanel != null){
+			remove(hotZonePanel);
+		}
+		
+		if(fiveManPanel != null){
+			remove(fiveManPanel);
+		}
+		if(shootPanel != null){
+			remove(shootPanel);
+		}
+		if(off_defPanel != null){
+			remove(off_defPanel);
+		}
+		if(turnoverfoulsPanel != null){
+			remove(turnoverfoulsPanel);
+		}
+		if(positionPanel != null){
+			remove(positionPanel);
+		}
+		if(evolutionPanel != null){
+			remove(evolutionPanel);
+		}
+		if(wlprofilePanel != null){
+			remove(wlprofilePanel);
+		}
+	}
+
+	void clearDiagram(){
+		if(fiveManPanel != null){
+			remove(fiveManPanel);
+		}
+		if(shootPanel != null){
+			remove(shootPanel);
+		}
+		if(off_defPanel != null){
+			remove(off_defPanel);
+		}
+		if(turnoverfoulsPanel != null){
+			remove(turnoverfoulsPanel);
+		}
+		if(positionPanel != null){
+			remove(positionPanel);
+		}
+		if(evolutionPanel != null){
+			remove(evolutionPanel);
+		}
+		if(wlprofilePanel != null){
+			remove(wlprofilePanel);
+		}
+	}
+	
+	public void setFiveManPanel(){
+		fiveManPanel = new FiveMan(vo.id,this.season,true);
+		this.add(fiveManPanel);
+		repaint();
+	}
+	
+	public void setShootingPanel(){
+		shootPanel = new Shooting(vo.id,true,this.season);
+		this.add(shootPanel);
+		repaint();
+	}
+	
+	public void setOFF_DEFPanel(){
+		off_defPanel = new OFF_DEF(vo.id,this.season);
+		this.add(off_defPanel);
+		repaint();
+	}
+	
+	public void setTurnoverFoulsPanel(){
+		turnoverfoulsPanel = new Turnover_Fouls(vo.id,this.season);
+		this.add(turnoverfoulsPanel);
+		repaint();
+	}
+	
+	public void setPositionPanel(){
+		positionPanel = new Position(vo.id,this.season,true);
+		this.add(positionPanel);
+		repaint();
+	}
+	
+	public void setEvolutionPanel(){
+		ArrayList<String> names = new ArrayList<String>();
+		names.add(name);
+		if(nameOPP != "0"){
+			names.add(nameOPP);
+		}
+		evolutionPanel = new Evolution(names,true);
+		this.add(evolutionPanel);
+		repaint();
+	}
+	
+	public void setWLProfiles(){
+		wlprofilePanel = new WLProfiles(vo.id,this.season);
+		this.add(wlprofilePanel);
+		repaint();
+	}
+	
+	void setDiagramClassification(){
+		diagramClassification.clear();
+		diagramClassification.add("五人组合");
+		diagramClassification.add("投篮分析");
+		diagramClassification.add("攻防对比");
+		diagramClassification.add("失误犯规分析");
+		diagramClassification.add("位置分析");
+		diagramClassification.add("演化历程");
+		diagramClassification.add("胜负分析");
+		
+		diagramList = new DiagramList(diagramClassification,new Point(1095,280),181);
+		diagramList.register(this);//观察者模式
+		this.add(diagramList);
+		diagramList.setVisible(false);
+	}
+	
+	public void setAttri(boolean isLeague){
+		itemsNeedAdd.clear();
+		itemsNeedAdd.add("场均得分");
+		itemsNeedAdd.add("场均助攻");
+		itemsNeedAdd.add("场均篮板"); 
+		itemsNeedAdd.add("三分％"); 
+		itemsNeedAdd.add("罚球％");
+
+		team.clear();
+		team.add(vo.avgPoint);team.add(vo.avgRebound);team.add(vo.avgAssist);
+		team.add(vo.three);team.add(vo.penalty);
+		
+		TeamVO avgLeague = new TeamVO();
+		if(isLeague){
+			avgLeague = tds.avgLeague(itemsNeedAdd, vo.league, season);
+		}else{
+			avgLeague = tds.findTeamInfo(teamVSTopPanel.anotherVO.teamName,season);
+		}
+		avg.clear();
+		avg.add(avgLeague.avgPoint);avg.add(avgLeague.avgRebound);avg.add(avgLeague.avgAssist);
+		avg.add(avgLeague.three);avg.add(avgLeague.penalty);
+	}
+	
+	public void setSelectedGroups(SelectLabel s){
+		selectLabelGroups.clear();
+		selectLabelGroups.add(DataLabel);
+		selectLabelGroups.add(MemberLabel);
+		selectLabelGroups.add(LatestMatchLabel);
+		selectLabelGroups.add(PastLabel);
+		selectLabelGroups.add(CompareTeamsLabel);
+		selectLabelGroups.add(HotZoneLabel);
+		selectLabelGroups.add(DiagramLabel);
+		for(SelectLabel sl : selectLabelGroups){
+			if(sl != s){
+				sl.setBackground(Color.black);
+				sl.isSelected = false;
+			}else{
+				sl.isSelected = true;
+				sl.setBackground(Color.gray);
+			}
+		}
+	}
+	
+	public void setTeamMemberPanel(){
+		teamMemberPanel = new TeamMemberPanel(vo.id,season);
+		this.add(teamMemberPanel,0);
+		teamDetailTopPanel.seasonComboBox.setVisible(true);
+		teamDetailTopPanel.commitSeason.setVisible(true);
+		repaint();
+	}
+
+	public void setTeamSchedulePanel(){
+		teamSchedulePanel = new TeamSchedulePanel(vo.teamName);
+		this.add(teamSchedulePanel,0);
+		teamDetailTopPanel.seasonComboBox.setVisible(false);
+		teamDetailTopPanel.commitSeason.setVisible(false);
+		repaint();
+	}
+
+	public void setTeamRecent5MatchPanel(){
+		teamRecent5MatchPanel = new TeamRecent5MatchPanel(vo.teamName);
+		this.add(teamRecent5MatchPanel,0);
+		teamDetailTopPanel.seasonComboBox.setVisible(false);
+		teamDetailTopPanel.commitSeason.setVisible(false);
+		repaint();
+	}
+	
+	public void setTeamDataPanel(){
+		teamDataPanel = new TeamDataPanel(vo,season);
+		this.add(teamDataPanel,0);
+		teamDetailTopPanel.seasonComboBox.setVisible(true);
+		teamDetailTopPanel.commitSeason.setVisible(true);
+		repaint();
+	}
+	
+	public void setTeamVSPanel(ArrayList<Double> team,ArrayList<Double> avg){
+		teamVSContentPanel = new TeamVSContentPanel(itemsNeedAdd,team,avg);
+		this.add(teamVSContentPanel);
+		teamVSContentPanel.registerObserver(this);
+		repaint();
+	}
+
+	public void setVSTopPanel(TeamMiddlePanel middle){
+		teamVSTopPanel = new TeamVSTopPanel(middle,vo);
+		this.add(teamVSTopPanel);
+		teamVSTopPanel.registerObserver(this);
+		repaint();
+	}
+	
+	public void setTopPanel (){
+		teamDetailTopPanel = new TeamDetailTopPanel(vo);
+		this.add(teamDetailTopPanel);
+		teamDetailTopPanel.registerObserver(this);
+		repaint();
+	}
+	
+	public void setHotZonePanel(){
+		hotZonePanel = new HotRegionPane(vo.id);
+		this.add(hotZonePanel);
+		repaint();
+	}
+	
+	public void setContrastLabel(){
+		Point location = new Point(0,200);
+		Point size = new Point(181,50);
+		DataLabel = new SelectLabel("资料",location,size);
+
+		DataLabel.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				setSelectedGroups(DataLabel);
+				setVisible(false);
+				clearDiagram();
+				if(teamDataPanel != null){
+					remove(teamDataPanel);
+				}
+				if(teamMemberPanel != null){
+					remove(teamMemberPanel);
+				}
+				if(teamRecent5MatchPanel != null){
+					remove(teamRecent5MatchPanel);
+				}
+				if(teamSchedulePanel != null){
+					remove(teamSchedulePanel);
+				}
+				if(teamVSContentPanel != null){
+					remove(teamVSContentPanel);
+				}
+				if(hotZonePanel != null){
+					remove(hotZonePanel);
+				}
+				if(teamVSTopPanel != null){
+					remove(teamVSTopPanel);
+				}
+				if(teamDetailTopPanel.getParent() != null){
+					teamDetailTopPanel.updateTeamDetailTopPanel(vo);
+				}else{
+					setTopPanel();
+				}
+
+				setTeamDataPanel();
+				setVisible(true);
+				repaint();				
+			}
+		});
+		this.add(DataLabel);
+	}
+	
+	public void setMemberLabel(){
+		Point location = new Point(182,200);
+		Point size = new Point(181,50);
+		MemberLabel = new SelectLabel("阵容",location,size);
+
+		MemberLabel.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				setSelectedGroups(MemberLabel);
+				setVisible(false);
+				clearDiagram();
+				if(teamDataPanel != null){
+					remove(teamDataPanel);
+				}
+				if(teamMemberPanel != null){
+					remove(teamMemberPanel);
+				}
+				if(teamRecent5MatchPanel != null){
+					remove(teamRecent5MatchPanel);
+				}
+				if(teamSchedulePanel != null){
+					remove(teamSchedulePanel);
+				}
+				if(teamVSContentPanel != null){
+					remove(teamVSContentPanel);
+				}
+				if(hotZonePanel != null){
+					remove(hotZonePanel);
+				}
+				if(teamDetailTopPanel.getParent() != null){
+					teamDetailTopPanel.updateTeamDetailTopPanel(vo);
+				}else{
+					setTopPanel();
+				}
+				if(teamVSTopPanel != null){
+					remove(teamVSTopPanel);
+				}
+				setTeamMemberPanel();
+				setVisible(true);
+				repaint();			
+			}
+		});
+		this.add(MemberLabel);
+	}
+	
+	public void setLatestMatchLabel(){
+		Point location = new Point(364,200);
+		Point size = new Point(181,50);
+		LatestMatchLabel = new SelectLabel("近5场比赛查询",location,size);
+
+		LatestMatchLabel.addMouseListener(new MouseAdapter() {
+
+			@Override
+			public void mousePressed(MouseEvent e) {
+				setSelectedGroups(LatestMatchLabel);
+				setVisible(false);
+				clearDiagram();
+				if(teamDataPanel != null){
+					remove(teamDataPanel);
+				}
+				if(teamMemberPanel != null){
+					remove(teamMemberPanel);
+				}
+				if(teamRecent5MatchPanel != null){
+					remove(teamRecent5MatchPanel);
+				}
+				if(teamSchedulePanel != null){
+					remove(teamSchedulePanel);
+				}
+				if(teamVSContentPanel != null){
+					remove(teamVSContentPanel);
+				}
+				if(hotZonePanel != null){
+					remove(hotZonePanel);
+				}
+				if(teamDetailTopPanel.getParent() != null){
+					teamDetailTopPanel.updateTeamDetailTopPanel(vo);
+				}else{
+					setTopPanel();
+				}
+				if(teamVSTopPanel != null){
+					remove(teamVSTopPanel);
+				}
+//				setTopPanel();
+				setTeamRecent5MatchPanel();
+				setVisible(true);
+				repaint();				
+			}
+		});
+
+		this.add(LatestMatchLabel);
+	}
+
+	public void setPastLabel(){
+		Point location = new Point(546,200);
+		Point size = new Point(181,50);
+		PastLabel = new SelectLabel("过往查询",location,size);
+		PastLabel.addMouseListener(new MouseAdapter() {
+
+			@Override
+			public void mousePressed(MouseEvent e) {
+				setSelectedGroups(PastLabel);
+				setVisible(false);
+				clearDiagram();
+				if(teamDataPanel != null){
+					remove(teamDataPanel);
+				}
+				if(teamMemberPanel != null){
+					remove(teamMemberPanel);
+				}
+				if(teamRecent5MatchPanel != null){
+					remove(teamRecent5MatchPanel);
+				}
+				if(teamSchedulePanel != null){
+					remove(teamSchedulePanel);
+				}
+				if(teamVSContentPanel != null){
+					remove(teamVSContentPanel);
+				}
+				if(hotZonePanel != null){
+					remove(hotZonePanel);
+				}
+				if(teamDetailTopPanel.getParent() != null){
+					teamDetailTopPanel.updateTeamDetailTopPanel(vo);
+				}else{
+					setTopPanel();
+				}
+				if(teamVSTopPanel != null){
+					remove(teamVSTopPanel);
+				}
+//				setTopPanel();
+				setTeamSchedulePanel();
+				setVisible(true);
+				repaint();		
+				
+			}
+		});
+
+		this.add(PastLabel);
+	}
+	
+	public void setHotZoneLabel(){
+		Point location = new Point(729,200);
+		Point size = new Point(181,50);
+		HotZoneLabel = new SelectLabel("热区",location,size);
+		HotZoneLabel.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				setSelectedGroups(HotZoneLabel);
+				setVisible(false);
+				clearDiagram();
+				if(teamMemberPanel != null){
+					remove(teamMemberPanel);
+				}
+				if(teamSchedulePanel != null){
+					remove(teamSchedulePanel);
+				}
+				if(teamRecent5MatchPanel != null){
+					remove(teamRecent5MatchPanel);
+				}
+				if(teamVSContentPanel != null){
+					remove(teamVSContentPanel);
+				}
+				if(teamDataPanel != null){
+					remove(teamDataPanel);
+				}
+				if(teamVSTopPanel != null){
+					remove(teamVSTopPanel);
+				}
+				if(teamDetailTopPanel.getParent() != null){
+					teamDetailTopPanel.updateTeamDetailTopPanel(vo);
+				}else{
+					setTopPanel();
+				}
+				setHotZonePanel();
+				setVisible(true);
+				repaint();
+			}
+			
+		});
+		this.add(HotZoneLabel);
+	}
+	
+	public void setCompareTeamsLabel(){
+		
+		Point location = new Point(912,200);
+		Point size = new Point(181,50);
+		CompareTeamsLabel = new SelectLabel("球队对比",location,size);
+		CompareTeamsLabel.addMouseListener(new MouseAdapter() {
+			
+			@Override
+			public void mousePressed(MouseEvent e) {
+				setSelectedGroups(CompareTeamsLabel);
+				setVisible(false);
+				clearDiagram();
+				if(teamDataPanel != null){
+					remove(teamDataPanel);
+				}
+				if(teamMemberPanel != null){
+					remove(teamMemberPanel);
+				}
+				if(teamRecent5MatchPanel != null){
+					remove(teamRecent5MatchPanel);
+				}
+				if(teamSchedulePanel != null){
+					remove(teamSchedulePanel);
+				}
+				if(teamVSContentPanel != null){
+					remove(teamVSContentPanel);
+				}
+				if(hotZonePanel != null){
+					remove(hotZonePanel);
+				}
+				if(teamDetailTopPanel.getParent() != null){
+//					teamDetailTopPanel.updateTeamDetailTopPanel(vo);
+					remove(teamDetailTopPanel);
+//					System.out.println("TEAMDETAILTOPPANEL EXIST");
+				}
+				if(teamVSTopPanel != null){
+					remove(teamVSTopPanel);
+				}
+				setVSTopPanel(TeamMiddlePanel.this);
+				setTeamVSPanel(team,avg);
+				setVisible(true);
+				repaint();		
+			}
+			
+		});
+		this.add(CompareTeamsLabel);
+	}
+	
+	public void setDiagramLabel(){
+		setDiagramClassification();
+		DiagramListListener diagramListListener = new DiagramListListener();
+		DiagramLabelListener diagramLabelListener = new DiagramLabelListener();
+		diagramList.addMouseListener(diagramListListener);
+		diagramList.setBorder(BorderFactory.createLineBorder(Color.black));
+		
+		JPanel dp = Mainframe.getFrame().getPopupContainer();
+		diagramList.setVisible(false);
+		dp.removeAll();
+		dp.add(diagramList);
+		dp.repaint();
+		
+		Point location = new Point(1095,200);
+		Point size = new Point(181,50);
+		DiagramLabel = new SelectLabel("图表分析",location,size);
+		DiagramLabel.addMouseListener(diagramLabelListener);
+		this.add(DiagramLabel);
+	}
+
+	class DiagramListListener implements MouseListener{
+		int selected = 0;
+		@Override
+		public void mouseClicked(MouseEvent e) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void mousePressed(MouseEvent e) {
+			setSelectedGroups(DiagramLabel);
+			System.out.println("TESTED");
+//			selected ++;
+//			if(selected % 2 == 1){
+//				diagramList.setVisible(true);
+//			}else{
+//				diagramList.setVisible(false);
+//			}
+		}
+
+		@Override
+		public void mouseReleased(MouseEvent e) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void mouseEntered(MouseEvent e) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void mouseExited(MouseEvent e) {
+			// TODO Auto-generated method stub
+			diagramList.setVisible(false);
+			System.out.println(e.getPoint());
+		}
+
+//		public void mouseEntered(MouseEvent e) {
+//			DiagramLabel.isSelected = true;
+//			if(e.getSource() == diagramList || e.getSource() == DiagramLabel){
+//				JPanel dp = Mainframe.getFrame().getPopupContainer();
+//				diagramList.setVisible(true);
+//				dp.removeAll();
+//				dp.add(diagramList);
+//				dp.repaint();
+//			}
+//		}
+//
+//		@Override
+//		public void mouseExited(MouseEvent e) {
+//			DiagramLabel.isSelected = false;
+//			if(e.getComponent() == DiagramLabel){
+//				SelectLabel l = (SelectLabel) e.getSource();
+//				if(!l.isSelected){
+//					l.setBackground(Color.BLACK);
+//				}else{
+//					l.setBackground(Color.DARK_GRAY);
+//				}
+//			}
+//			
+//			if(e.getY() <= diagramList.getHeight()){
+//				System.out.println("list");
+//				if(e.getY() <= 1){
+////					Mainframe.getFrame().clearPopup();
+//				}else{
+//					diagramList.setVisible(false);
+//				}
+//				
+//			}else if(e.getComponent() == DiagramLabel){
+//				System.out.println("button");
+//				if(e.getY() >= DiagramLabel.getHeight()-1){
+////					System.out.println("unchange");
+//				}else{
+//					diagramList.setVisible(false);
+////					Mainframe.getFrame().clearPopup();
+//				}
+//			}
+//			
+////			System.out.println("in list? "+inList+" |||in Button?"+inButton);
+//		}
+
+	}
+	
+	class DiagramLabelListener implements MouseListener{
+
+		@Override
+		public void mouseClicked(MouseEvent e) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void mousePressed(MouseEvent e) {
+			setSelectedGroups(DiagramLabel);
+			updateDiagram(digramItemSelected);
+		}
+
+		@Override
+		public void mouseReleased(MouseEvent e) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void mouseEntered(MouseEvent e) {
+			diagramList.setVisible(true);
+		}
+
+		@Override
+		public void mouseExited(MouseEvent e) {
+			// TODO Auto-generated method stub
+			int y = e.getY();
+			if(y >= DiagramLabel.getHeight()){
+				
+			}else{
+				diagramList.setVisible(false);
+			}
+		}
+		
+	}
+		
+	public static void main(String[] args){
+		JFrame jf = new JFrame();
+		jf.setLayout(null);
+		jf.setSize(1280,700);
+		jf.setLocationRelativeTo(null);
+		jf.add(new TeamMiddlePanel("Hawks"));
+		jf.setVisible(true);
+	}	
+}
